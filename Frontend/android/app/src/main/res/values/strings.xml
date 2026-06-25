@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Medi Sewa Nepal</string>
+    <string name="title_activity_main">Medi Sewa Nepal</string>
+    <string name="package_name">com.medisewanp.app</string>
+    <string name="custom_url_scheme">com.medisewanp.app</string>
+</resources>
