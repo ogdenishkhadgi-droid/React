@@ -15,7 +15,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-
 function App() {
     const [NodeCount, setNodeCount] = useState(1);
 
@@ -31,7 +30,10 @@ function App() {
     const [mylocationLat , setMyLocationLat] = useState(27.7172);
     const [mylocationLng , setMyLocationLng] = useState(85.3240);
 
-    
+    //GPS error handling
+    const [gpsError, setGpsError] = useState(null);
+    const [apiError, setApiError] = useState(null);
+
     const press_append = () => {
         if (NodeCount < 99) {
             setNodeCount(NodeCount + 1);
@@ -45,48 +47,108 @@ function App() {
         setNodeCount(0);
     };
 
+    // GPS Geolocation Hook
     useEffect(() => {
-    const fetchHospitalsInRadius = async () => {
-        setLoading(true);
-        
-        const query = `
-            [out:json][timeout:15];
-            (
-              node["amenity"="hospital"](around:1000,${mylocationLat},${mylocationLng});
-              way["amenity"="hospital"](around:1000,${mylocationLat},${mylocationLng});
+            if (!navigator.geolocation) {
+                setGpsError("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setMyLocationLat(position.coords.latitude);
+                    setMyLocationLng(position.coords.longitude);
+                    setGpsError(null); // Clear error on success
+                },
+                (err) => {
+                    const errorMessage = err.code === err.PERMISSION_DENIED 
+                        ? "Please enable location permission to find nearby hospitals." 
+                        : "Unable to get your location. Using default Kathmandu coordinates.";
+                    setGpsError(errorMessage);
+                    console.error("GPS Error:", err.message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,           
+                    maximumAge: 0,            
+                }
             );
-            out center 50; 
-        `; 
-        
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+    }, []);
 
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
+
+    // Fetch hospitals from Overpass API
+    useEffect(() => {
+        const fetchHospitalsInRadius = async () => {
+            setLoading(true);
+            setApiError(null); // Clear previous errors
             
-            const formattedHospitals = data.elements.map((element, index) => {
-                const hospitalLat = element.lat || (element.center && element.center.lat);
-                const hospitalLng = element.lon || (element.center && element.center.lon);
+            const query = `
+                [out:json][timeout:15];
+                (
+                  node["amenity"="hospital"](around:1000,${mylocationLat},${mylocationLng});
+                  way["amenity"="hospital"](around:1000,${mylocationLat},${mylocationLng});
+                );
+                out center 50; 
+            `; 
+            
+            const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+            try {
+                const response = await fetch(url);
                 
-                return {
-                    id: element.id || index,
-                    name: element.tags.name || "अस्पताल (Hospital)",
-                    address: element.tags["addr:street"] || "Nearby",
-                    phone: element.tags.phone || element.tags["contact:phone"] || "102", 
-                    location: [hospitalLat, hospitalLng]
-                };
-            });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Null safety check for elements array
+                if (!data.elements || !Array.isArray(data.elements)) {
+                    setNearbyHospitals([]);
+                    setApiError("No hospital data received from server.");
+                    setLoading(false);
+                    return;
+                }
 
-                        setNearbyHospitals(formattedHospitals);
-                    } catch (error) {
-                        console.error("Error matching local radius hospitals:", error);
-                    } finally {
-                        setLoading(false);
-                    }
-                };
+                // Filter out hospitals with invalid coordinates
+                const formattedHospitals = data.elements
+                    .map((element, index) => {
+                        const hospitalLat = element.lat || (element.center && element.center.lat);
+                        const hospitalLng = element.lon || (element.center && element.center.lon);
+                        
+                        // Skip if coordinates are missing
+                        if (hospitalLat === undefined || hospitalLng === undefined) {
+                            return null;
+                        }
+                        
+                        return {
+                            id: element.id || index,
+                            name: element.tags?.name || "अस्पताल (Hospital)",
+                            address: element.tags?.["addr:street"] || "Nearby",
+                            phone: element.tags?.phone || element.tags?.["contact:phone"] || "102", 
+                            location: [hospitalLat, hospitalLng]
+                        };
+                    })
+                    .filter(hospital => hospital !== null); // Remove invalid entries
 
-                fetchHospitalsInRadius();
-            }, []); 
+                setNearbyHospitals(formattedHospitals);
+                
+                // Show message if no hospitals found
+                if (formattedHospitals.length === 0) {
+                    setApiError("No hospitals found in your area.");
+                }
+                
+            } catch (error) {
+                console.error("Error fetching hospitals:", error);
+                setApiError("Failed to load nearby hospitals. Please try again later.");
+                setNearbyHospitals([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchHospitalsInRadius();
+    }, [mylocationLat, mylocationLng]); 
 
     return (
         <div className="app_contain">
@@ -105,16 +167,18 @@ function App() {
             }}
         >
             <header className="floating-header">
-                <button className="back-btn" onClick={() => setActiveTab('home')}>← Back</button>
+                <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
                 <div className="header-title">नजिकैका अस्पतालहरू</div>
             </header>
 
             <div className="map-viewport-canvas" style={{ height: "100%", width: "100%" }}>
+                
                 <MapContainer 
                     center={[mylocationLat, mylocationLng]} 
                     zoom={15} 
                     zoomControl={false}        
                     style={{ height: "100%", width: "100%" }}
+                    
                     whenReady={(mapInstance) => {
                         // Instantly checks map bounding layers when tab changes
                         setTimeout(() => {
@@ -122,6 +186,8 @@ function App() {
                         }, 100);
                     }}
                 >
+                    
+
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -146,6 +212,7 @@ function App() {
                 <div 
                     className="sheet-interactive-header" 
                     onClick={() => setIsMapSheetExpanded(!isMapSheetExpanded)}
+                    onTouchStart={() => setIsMapSheetExpanded(!isMapSheetExpanded)}
                 >
                     <div className="sheet-drag-handle"></div>
                     <div className="sheet-header-group">
@@ -158,9 +225,22 @@ function App() {
                 
                 <div className="sheet-content-container">
                     <div className="hospital-scroll-list">
+                        {gpsError && (
+                            <div style={{ textAlign: 'center', padding: '15px', color: '#d9534f', backgroundColor: '#f2dede', borderRadius: '4px', margin: '10px' }}>
+                                ⚠️ {gpsError}
+                            </div>
+                        )}
+                        
+                        {apiError && !loading && (
+                            <div style={{ textAlign: 'center', padding: '15px', color: '#d9534f', backgroundColor: '#f2dede', borderRadius: '4px', margin: '10px' }}>
+                                ⚠️ {apiError}
+                            </div>
+                        )}
+                        
                         {loading ? (
                             <div style={{ textAlign: 'center', padding: '20px', color: '#7f8c8d' }}>खोज्दै...</div>
                         ) : (
+                            
                             nearbyHospitals.map((hospital) => {
                                 const cleanPhone = hospital.phone.split(',')[0].trim();
                                 return (
@@ -169,12 +249,17 @@ function App() {
                                             <h4>{hospital.name}</h4>
                                             <p>{hospital.address}</p>
                                         </div>
+                                        
                                         <a href={`tel:${cleanPhone}`} className="hosp-call-action">
                                             📞 Call
                                         </a>
                                     </div>
                                 );
                             })
+                        )}
+
+                        {!loading && nearbyHospitals.length === 0 && !apiError && (
+                            <div style={{ textAlign: 'center', padding: '20px', color: '#7f8c8d' }}>कुनै अस्पताल भेटिएन।</div>
                         )}
                     </div>
                 </div>
@@ -188,7 +273,7 @@ function App() {
                     <p className="dis">तपाईंको आफ्नै घरको चिकित्सा सेवा</p>
                 </div>
                 <div className="notification-container">
-                    <button className="notify-but" onClick={Clearit}>
+                    <button className="notify-but" onClick={Clearit} onTouchStart={Clearit}>
                         <img src={bell} className="bell" alt="Notifications" />
                     </button>
                     {NodeCount > 0 && <div className="badge">{NodeCount}</div>}
@@ -200,7 +285,7 @@ function App() {
             
             { ActiveTab === 'home' && (<div className="main-container">
             <div className="clickable"> 
-                <button className="but animate-pop-up delay-1" onClick={press_append}>
+                <button className="but animate-pop-up delay-1">
                     <Hospital size={28} color="#ffffff" className="hospital-icon"/>
                     <div className="btn-text-group">
                         <h1 className="title1">Emergency Sewa</h1> 
@@ -212,7 +297,7 @@ function App() {
                 <br />
                 <div className="grid-container">
                    <div className="clickable"> 
-                        <button className="node-but animate-pop-up delay-2 " onClick={() => setActiveTab('Specialist')}>
+                        <button className="node-but animate-pop-up delay-2 " onClick={() => setActiveTab('Specialist')} onTouchStart={() => setActiveTab('Specialist')}>
                             <Stethoscope size={32} className="node-icon clinic-color" />
                             <span className="node-title">Specialists</span>
                             <span className="node-title-nep">विशेषज्ञ</span>
@@ -220,7 +305,7 @@ function App() {
                     </div>
 
                     <div className="clickable">
-                        <button className="node-but animate-pop-up delay-3" onClick={() => setActiveTab('Locate')}>
+                        <button className="node-but animate-pop-up delay-3" onClick={() => setActiveTab('Locate')} onTouchStart={() => setActiveTab('Locate')}>
                             <MapPin size={32} className="node-icon map-color" />
                             <span className="node-title">Nearby</span>
                             <span className="node-title-nep">नजिकै</span>
@@ -228,7 +313,7 @@ function App() {
                     </div>
 
                     <div className="clickable">
-                        <button className="node-but animate-pop-up delay-4" onClick={() => setActiveTab('Guide')}>
+                        <button className="node-but animate-pop-up delay-4" onClick={() => setActiveTab('Guide')} onTouchStart={() => setActiveTab('Guide')}>
                             <Compass size={32} className="node-icon guide-color" />
                             <span className="node-title">Guide</span>
                             <span className="node-title-nep">निर्देशन</span>
@@ -236,7 +321,7 @@ function App() {
                     </div>
 
                     <div className="clickable">
-                        <button className="node-but animate-pop-up delay-5" onClick={()=> setActiveTab('Symptoms')}>
+                        <button className="node-but animate-pop-up delay-5" onClick={()=> setActiveTab('Symptoms')} onTouchStart={()=> setActiveTab('Symptoms')}>
                             <Activity size={32} className="node-icon symptom-color" />
                             <span className="node-title">Symptoms</span>
                             <span className="node-title-nep">लक्षणहरू</span>
@@ -297,7 +382,7 @@ function App() {
                 {ActiveTab === 'Specialist' && (
                     <div className="screen-wrapper specialist">
                         <header className="floating-header">
-                            <button className="back-btn" onClick={() => setActiveTab('home')}>← Back</button>
+                            <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
                             <div className="map-header-title">विशेषज्ञ</div>
                         </header>
                     </div>
@@ -361,7 +446,7 @@ function App() {
                 {ActiveTab === 'Guide' && (
                     <div className="screen-wrapper specialist">
                         <header className="floating-header">
-                            <button className="back-btn" onClick={() => setActiveTab('home')}>← Back</button>
+                            <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
                             <div className="map-header-title">निर्देशन</div>
                         </header>
                     </div>   
@@ -370,7 +455,7 @@ function App() {
                 {ActiveTab === 'Symptoms' && (
                     <div className="screen-wrapper specialist">
                         <header className="floating-header">
-                            <button className="back-btn" onClick={() => setActiveTab('home')}>← Back</button>
+                            <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
                             <div className="map-header-title">लक्षणहरू</div>
                         </header>
                     </div>   
@@ -385,18 +470,21 @@ function App() {
                     <button 
                         className={ActiveTab === 'home' ? 'nav-item-active' : ''} 
                         onClick={() => setActiveTab('home')}
+                        onTouchStart={() => setActiveTab('home')}
                     >
                         Home
                     </button>
                     <button 
                         className={ActiveTab === 'record' ? 'nav-item-active' : ''} 
                         onClick={() => setActiveTab('record')}
+                        onTouchStart={() => setActiveTab('record')}
                     >
                         Records
                     </button>
                     <button 
                         className={ActiveTab === 'account' ? 'nav-item-active' : ''} 
                         onClick={() => setActiveTab('account')}
+                        onTouchStart={() => setActiveTab('account')}
                     >
                         Account
                     </button>
