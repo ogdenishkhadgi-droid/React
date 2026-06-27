@@ -29,6 +29,7 @@ function App() {
 
     const [nearbyHospitals, setNearbyHospitals] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [guideSearchTerm, setGuideSearchTerm] = useState("");
 
     const [mylocationLat , setMyLocationLat] = useState(27.7172);
     const [mylocationLng , setMyLocationLng] = useState(85.3240);
@@ -627,62 +628,136 @@ function App() {
 
                 {ActiveTab === 'Guide' && (
                     <div className="screen-wrapper specialist">
-                        <header className="floating-header">
-                            <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
-                            <div className="header-title">निर्देशन (Guide)</div>
-                        </header>
+                    <header className="floating-header">
+                        <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
+                        <div className="header-title">निर्देशन (Guide)</div>
+                    </header>
 
+                    <div className="guide-content-scroll" style={{
+                        marginTop: "85px",
+                        height: "calc(100vh - 170px)",
+                        overflowY: "auto",
+                        padding: "0 20px",
+                        color: "#ffffff",
+                        scrollbarWidth: "none"
+                    }}>
                         
-                        <div className="guide-content-scroll" style={{
-                            marginTop: "85px",
-                            height: "calc(100vh - 170px)",
-                            overflowY: "auto",
-                            padding: "0 20px",
-                            color: "#ffffff",
-                            scrollbarWidth: "none"
-                        }}>
-                            <h2 style={{ fontSize: "20px", marginBottom: "15px", fontWeight: "600" }}>एप प्रयोग गर्ने चरणबद्ध निर्देशिका:</h2>
-                            
-                            <div style={{ display: "flex", flexDirection: "column", gap: "14px", paddingBottom: "20px" }}>
-                                
-                                <div className="animate-pop-up delay-1" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)" }}>
-                                    <h3 style={{ margin: "0 0 6px 0", fontSize: "16px", color: "#ffeaa7" }}>१. दर्ता र लगइन (Login)</h3>
-                                    <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", opacity: 0.95 }}>
-                                        एप खोल्नासाथ आफ्नो पूरा नाम, ठेगाना, र फोन नम्बर राखेर 'Submit' बटन थिच्नुहोस्।
-                                    </p>
-                                </div>
-
-                                <div className="animate-pop-up delay-2" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)" }}>
-                                    <h3 style={{ margin: "0 0 6px 0", fontSize: "16px", color: "#ffeaa7" }}>२. आपतकालीन सेवा (Emergency Sewa)</h3>
-                                    <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", opacity: 0.95 }}>
-                                        कुनै पनि आकस्मिक अवस्थामा मुख्य पृष्ठमा रहेको ठूलो रातो 'Emergency Sewa' बटन थिचेर सिधै एम्बुलेन्स सेवा (१०२) मा फोन गर्न सक्नुहुन्छ।
-                                    </p>
-                                </div>
-
-                                <div className="animate-pop-up delay-3" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)" }}>
-                                    <h3 style={{ margin: "0 0 6px 0", fontSize: "16px", color: "#ffeaa7" }}>३. नजिकैका अस्पतालहरू (Nearby Map)</h3>
-                                    <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", opacity: 0.95 }}>
-                                        'Nearby' बटनमा थिचेर नक्सा मार्फत आफ्नो स्थान वरपरका अस्पतालहरू खोज्न, तिनको ठेगाना हेर्न र सिधै 'Call' बटन थिचेर अस्पतालमा सम्पर्क गर्न सक्नुहुन्छ।
-                                    </p>
-                                </div>
-
-                                <div className="animate-pop-up delay-4" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)" }}>
-                                    <h3 style={{ margin: "0 0 6px 0", fontSize: "16px", color: "#ffeaa7" }}>४. विशेषज्ञ र लक्षणहरू (Specialists & Symptoms)</h3>
-                                    <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", opacity: 0.95 }}>
-                                        विशेषज्ञ डाक्टरहरूको जानकारीका लागि 'Specialists' र विभिन्न रोगका लक्षणहरू बुझ्नका लागि 'Symptoms' बटनको प्रयोग गर्नुहोस्।
-                                    </p>
-                                </div>
-
-                                <div className="animate-pop-up delay-5" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)" }}>
-                                    <h3 style={{ margin: "0 0 6px 0", fontSize: "16px", color: "#ffeaa7" }}>५. प्रोफाइल व्यवस्थापन (Profile)</h3>
-                                    <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", opacity: 0.95 }}>
-                                        तल्लो नेभिगेसन बारमा रहेको 'Account' ट्याबमा गएर आफ्नो विवरण हेर्न वा बाहिर निस्कन (Log Out) सक्नुहुन्छ।
-                                    </p>
-                                </div>
-
-                            </div>
+                        {/* Guide Search Box - NEW */}
+                        <div className="search-box-wrapper animate-pop-up delay-1" style={{ marginBottom: "15px" }}>
+                            <input 
+                                type="text" 
+                                placeholder="प्राथमिक उपचार खोज्नुहोस् (Search first aid...)" 
+                                className="symptoms-search-input" // Reusing your existing styles
+                                value={guideSearchTerm}
+                                onChange={(e) => {
+                                    const term = e.target.value.toLowerCase();
+                                    setGuideSearchTerm(term);
+                                    
+                                    // DOM Filtering Engine
+                                    const elements = document.querySelectorAll('.guide-card-item');
+                                    elements.forEach(el => {
+                                        const keywords = el.getAttribute('data-keywords').toLowerCase();
+                                        if (keywords.includes(term)) {
+                                            el.style.display = 'block';
+                                        } else {
+                                            el.style.display = 'none';
+                                        }
+                                    });
+                                }}
+                            />
                         </div>
-                    </div> 
+
+                        <h2 style={{ fontSize: "20px", marginBottom: "15px", fontWeight: "600", color: "#ff7675" }}>
+                            प्राथमिक उपचार निर्देशिका (First Aid Guide):
+                        </h2>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: "14px", paddingBottom: "40px" }}>
+                            
+                            {/* CPR Guide */}
+                            <div className="guide-card-item animate-pop-up delay-1" data-keywords="cpr chest compressions respiration मुटु छाती सास" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)", borderLeft: "4px solid #55efc4" }}>
+                                <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    ❤️ CPR कसरी दिने? (Cardiopulmonary Resuscitation)
+                                </h3>
+                                <ol style={{ margin: 0, paddingLeft: "20px", fontSize: "14px", lineHeight: "1.6", opacity: 0.95 }}>
+                                    <li>बिरामी होसमा छ कि छैन सुन्न र छाम्न प्रयास गर्नुहोस्। होस नभए तुरुन्तै १०२ मा कल गर्नुहोस्।</li>
+                                    <li>बिरामीलाई समतल र कडा भुइँमा उत्तानो पारेर सुताउनुहोस्।</li>
+                                    <li>आफ्नो एउटा हत्केलालाई बिरामीको छातीको बीच भागमा राख्नुहोस् र अर्को हातको औंलाहरू आपसमा बाँध्नुहोस् (Lock गर्नुहोस्)।</li>
+                                    <li>आफ्नो कुहिनोलाई सीधा राख्दै प्रति मिनेट <b>१०० देखि १िको गतिमा तीव्रताका साथ छाती २ इन्च तलसम्म धस्सिने गरी दबाउनुहोस् (Push Hard & Fast)।</b></li>
+                                    <li>यदि तपाईँ तालिमप्राप्त हुनुहुन्छ भने, प्रत्येक ३० पटक छाती दबाएपछि २ पटक मुखबाट कृत्रिम सास (Rescue Breaths) दिनुहोस्।</li>
+                                </ol>
+                            </div>
+
+                            {/* Snake Bite Guide */}
+                            <div className="guide-card-item animate-pop-up delay-2" data-keywords="snake bite venom सर्प टोकाइ विष एन्टिभेनम" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)", borderLeft: "4px solid #ffaa00" }}>
+                                <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    🐍 सर्पले टोक्दा के गर्ने? (Snake Bite First Aid)
+                                </h3>
+                                <ol style={{ margin: 0, paddingLeft: "20px", fontSize: "14px", lineHeight: "1.6", opacity: 0.95 }}>
+                                    <li>बिरामीलाई आत्तिन नदिई शान्त राख्नुहोस् (डराउँदा वा दौडिँदा मुटुको धड्कन बढेर विष छिटो फैलिन्छ)।</li>
+                                    <li>टोकेको अङ्ग वा भागलाई चल्न नदिन कडा काठ वा कपडाले प्रबलीकरण (Immobilize) गर्नुहोस् र उक्त भागलाई <b>मुटुको तहभन्दा तल</b> राख्नुहोस्।</li>
+                                    <li>टोकेको ठाउँ वरपर कसिलो कपडा, औंठी, घडी वा गहना छन् भने तुरुन्तै फुकाल्नुहोस् (सुन्निन सक्ने हुनाले)।</li>
+                                    <li>घाउलाई सफा पानी वा साबुनपानीले बिस्तारै सफा गर्नुहोस् र हलुका सफा पट्टीले ढाक्नुहोस्।</li>
+                                    <li>सर्पको पहिचान गर्ने प्रयास गर्नुहोस् (तस्बिर खिच्न सके राम्रो) र ढिला नगरी तुरुन्तै एन्टिभेनम (Anti-venom) उपलब्ध भएको अस्पताल लैजानुहोस्।</li>
+                                </ol>
+                            </div>
+
+                            {/* Dog Bite Guide */}
+                            <div className="guide-card-item animate-pop-up delay-3" data-keywords="dog bite rabies vaccine कुकुर टोकाइ रेबिज सुई" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)", borderLeft: "4px solid #a29bfe" }}>
+                                <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    🐕 कुकुर वा अन्य जनावरले टोक्दा (Dog Bite & Rabies Slowdown)
+                                </h3>
+                                <ol style={{ margin: 0, paddingLeft: "20px", fontSize: "14px", lineHeight: "1.6", opacity: 0.95 }}>
+                                    <li>रेबिज भाइरसको असरलाई कम गर्न वा फैलिनबाट रोक्न घाउलाई तुरुन्तै बगिरहेको सफा पानी र साबुनले <b>१० देखि १५ मिनेटसम्म</b> राम्ररी धुनुहोस्।</li>
+                                    <li>एन्टिसेप्टिक क्रिम वा बिटाडिन उपलब्ध भएमा घाउमा लगाउनुहोस् र सफा कपडाले छोप्नुहोस्।</li>
+                                    <li>घाउबाट धेरै रगत बगिरहेको छ भने सफा कपडाले केही बेर थिचेर रगत बग्न रोक्नुहोस्।</li>
+                                    <li><b>चिकित्सक परामर्श (Consult a Doctor):</b> संक्रमण र रेबिजको जोखिमलाई पूर्ण रूपमा नियन्तरण गर्न २४ घण्टाभित्र डाक्टरसँग परामर्श गरी रेबिज विरुद्धको सुई (Anti-Rabies Vaccine) लगाउनुहोस्।</li>
+                                </ol>
+                            </div>
+
+                            {/* Fracture Guide */}
+                            <div className="guide-card-item animate-pop-up delay-4" data-keywords="fracture sprain care ice pack bone हड्डी भाँच्चिँदा मर्कँदा बरफ" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)", borderLeft: "4px solid #74b9ff" }}>
+                                <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    🦴 हड्डी भाँचिँदा वा मर्कँदा (Fracture & Sprain Care)
+                                </h3>
+                                <ol style={{ margin: 0, paddingLeft: "20px", fontSize: "14px", lineHeight: "1.6", opacity: 0.95 }}>
+                                    <li>थप चोट लाग्न नदिन र दुखाइ कम गर्न भाँचिएको वा मर्किएको भागलाई बिल्कुलै नचलाउनुहोस्।</li>
+                                    <li>कमाची, कडा गत्ता (Cardboard) वा काठको सहायताले चोट लागेको अङ्गलाई स्थिर (Splint) पार्नुहोस्।</li>
+                                    <li>सुन्निन र दुखाइ कम गर्न वा ढिलो बनाउन कपडामा बेरेर बरफ (Ice pack) ले १०-१५ मिनेट सम्म सेक्नुहोस् (सिधै छालामा बरफ नराख्नुहोस्)।</li>
+                                    <li><b>चिकित्सक परामर्श (Consult a Doctor):</b> भित्री कति चोट लागेको छ पत्ता लगाउन र उचित ब्यान्डेज वा प्लास्टर गर्नका लागि तुरुन्तै डाक्टरसँग परामर्श गरी एक्स-रे (X-Ray) गराउनुहोस्।</li>
+                                </ol>
+                            </div>
+
+                            {/* Heat Stroke / High Fever Guide */}
+                            <div className="guide-card-item animate-pop-up delay-5" data-keywords="heat stroke high fever sun लु ज्वरो कडा तापमान" style={{ background: "rgba(255, 255, 255, 0.12)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)", borderLeft: "4px solid #fd79a8" }}>
+                                <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    ☀️ कडा ज्वरो वा लु लाग्दा (High Fever / Heat Stroke Slowdown)
+                                </h3>
+                                <ol style={{ margin: 0, paddingLeft: "20px", fontSize: "14px", lineHeight: "1.6", opacity: 0.95 }}>
+                                    <li>शरीरको तापक्रमलाई तीव्र गतिमा बढ्नबाट रोक्न (ढिलो गर्न) बिरामीलाई तुरुन्तै शितल वा छहारी भएको ठाउँमा सार्नुहोस्।</li>
+                                    <li>बिरामीको लुगा खुकुलो बनाउनुहोस् र टाउको, गर्दन, र काखीमा चिसो पानीको पट्टी (Wet Sponge) राखेर तापक्रम घटाउने प्रयास गर्नुहोस्।</li>
+                                    <li>यदि बिरामी होसमा छ र बान्ता गरेको छैन भने प्रशस्त मात्रामा जीवनजल, पानी वा झोल पदार्थ पिउन दिनुहोस्।</li>
+                                    <li><b>चिकित्सक परामर्श (Consult a Doctor):</b> यदि शरीरको तापक्रम घट्नुको साटो १०३°F भन्दा माथि गइरहेमा वा बिरामी बेहोस हुन लागेमा तुरुन्तै अस्पताल पुर्‍याई आकस्मिक उपचार सुरु गर्नुहोस्।</li>
+                                </ol>
+                            </div>
+
+                            {/* CRITICAL CAUTION BOX */}
+                            <div className="guide-card-item animate-pop-up delay-6" data-keywords="caution danger warning सावधानी चेतावनी निषेध" style={{ background: "rgba(214, 48, 49, 0.25)", padding: "15px", borderRadius: "16px", backdropFilter: "blur(10px)", border: "1px solid #d63031" }}>
+                                <h3 style={{ margin: "0 0 6px 0", fontSize: "15px", color: "#ffffff", fontWeight: "bold" }}>
+                                    ⚠️ कडा चेतावनी / सावधानी (CRITICAL CAUTION):
+                                </h3>
+                                <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "13px", lineHeight: "1.6", color: "#ffffff" }}>
+                                    <li>सर्पले टोकेको ठाउँमा ब्लेड वा चक्कुले <b>काट्ने वा रक्तस्राव गराउने गल्ती कहिल्यै नगर्नुहोस्</b>।</li>
+                                    <li>मुखले चुसेर <b>विष निकाल्ने प्रयास कडा रूपमा निषेध</b> छ; यसले गर्दा बचाउने व्यक्तिको ज्यान पनि जोखिममा पर्छ।</li>
+                                    <li>टोकेको भाग भन्दा माथि डोरी वा कपडाले <b>अत्यधिक कसिलो गरी नबाँध्नुहोस् (Tourniquet नगर्नुहोस्)</b>, यसले रक्तसञ्चार पूर्ण बन्द भई उक्त अङ्ग सड्न सक्छ।</li>
+                                    <li>कुकुरले टोकेको घाउलाई <b>बाँध्ने वा टाँका लगाउने काम (Suturing) नगर्नुहोस्</b>; यसले भाइरस भित्रै रोकिने जोखिम बढाउँष।</li>
+                                    <li>हड्डी भाँचिएको ठाउँलाई जबर्जस्ती <b>सिधा पार्ने वा थिचेर मिलाउने प्रयास नगर्नुहोस्</b>, यसले नसाहरू काटिन सक्छन्।</li>
+                                    <li>धामीझाँक्री वा घरेलु जडीबुटीको चक्करमा लागेर अमूल्य समय खेर नफाल्नुहोस्।</li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
                 )}
 
                 {ActiveTab === 'Symptoms' && (
@@ -967,7 +1042,7 @@ function App() {
                         onClick={() => setActiveTab('record')}
                         onTouchStart={() => setActiveTab('record')}
                     >
-                        Records
+                        Fitness
                     </button>
                     <button 
                         className={ActiveTab === 'account' ? 'nav-item-active' : ''} 
