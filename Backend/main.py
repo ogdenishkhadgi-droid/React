@@ -56,10 +56,19 @@ async def recieve_data(data: UserData):
             phone = incoming_phone
             return {"status": "success", "user": user_dictionary}
         else:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Account with this phone number already exists."
-            )
+            if xisting_user["fullName"].lower() == data.fullName.lower():
+                xisting_user["_id"] = str(xisting_user["_id"])
+                phone = incoming_phone
+                return {
+                    "status": "success",
+                    "message": "Login successful", 
+                    "user": xisting_user
+                }
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="यो फोन नम्बर अर्कै नाममा दर्ता भइसकेको छ। (This phone number is registered under a different name.)"
+                )
 
     except HTTPException as http_ex:
         raise http_ex
