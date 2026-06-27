@@ -18,7 +18,7 @@ L.Icon.Default.mergeOptions({
 function App() {
     const [NodeCount, setNodeCount] = useState(1);
 
-    const [ActiveTab , setActiveTab] = useState('home');
+    const [ActiveTab , setActiveTab] = useState('login');
 
     const [Translate , setTranslate] = useState('bar');
 
@@ -33,6 +33,36 @@ function App() {
     //GPS error handling
     const [gpsError, setGpsError] = useState(null);
     const [apiError, setApiError] = useState(null);
+
+    //Login Page:
+    const [Login, setLogin] = useState(false);
+    const [Gender, setGender] = useState('null');
+    const [formData, setFormData] = useState({
+        fullName: '',
+        address: '',
+        phone: '',
+        gender: Gender
+    });
+    
+    useEffect(()=>{
+        if (Login){
+            setActiveTab('home');
+        }
+    },[]);
+
+    const handleChange = (e) =>{
+        const { name, value } = e.target;
+            setFormData((prevData) => ({
+        ...prevData,
+        [name]: value
+        }));
+    };
+
+
+    const handleSubmit = (e) => {
+     e.preventDefault();
+
+    }
 
     const press_append = () => {
         if (NodeCount < 99) {
@@ -281,6 +311,72 @@ function App() {
             </header>
         )}
             
+
+            {ActiveTab === 'login' && (
+                <div className="main-container animate-pop-up delay-1 ">
+                    <div className="header-text ">
+                    <h1 className="title formt">Medi Sewa Nepal</h1>
+                    <p className="dis formd">तपाईंको आफ्नै घरको चिकित्सा सेवा</p>
+                </div>
+                    <div className="form-container">
+                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
+                            <label>
+                                <b>Full Name (पूरा नाम) :</b>
+                                <input
+                                name="fullName"
+                                 className="input"
+                                 onChange={handleChange}
+                                 required
+                                />
+                            </label>
+                            <label>
+                                <b>Your Address (ठेगाना):</b>
+                                <input
+                                name="address"
+                                 className="input"
+                                 onChange={handleChange}
+                                 required
+                                />
+                            </label>
+
+                            <label>
+                                <b>Phone No (फोन नम्बर)</b>
+                                <input
+                                className="input"
+                                type="number"
+                                name="phone"
+                                placeholder="कृपया आफ्नो फोन नम्बर प्रयोग गर्नुहोस्।"
+                                onChange={handleChange}
+                                required
+                                >
+                                
+                                </input>
+                            </label>
+
+                            <label>
+                                
+                                <b>Gender (लिङ्ग)</b><br />
+                                <button className={`gender ${Gender === "male" ? "m" : ""}`}
+                                
+                                onClick={() => {setGender('male');setFormData(prev => ({ ...prev, gender: 'male' }))}} 
+                                onTouchStart={() => {setGender('male');setFormData(prev => ({ ...prev, gender: 'male' }))}}
+                                >Male</button>
+
+                                <button className={`gender ${Gender === "female" ? "f" : ""}`}
+                                 onClick={() => {setGender('female');setFormData(prev => ({ ...prev, gender: 'female' }))}}
+                                 onTouchStart={() => {setGender('female');setFormData(prev => ({ ...prev, gender: 'female' }))}}
+                                 >Female</button>
+
+                            </label>
+
+                            <button type="submit" className="submit">Submit</button>
+                             {/* <pre>{JSON.stringify(formData, null, 2)}</pre> */}
+                        </form>
+                    </div>
+                </div>
+
+            )}
+            
             
             
             { ActiveTab === 'home' && (<div className="main-container">
@@ -461,7 +557,7 @@ function App() {
                     </div>   
                 )}
 
-
+            {['home', 'record', 'account','Specialist','Guide','Symptoms'].includes(ActiveTab) && (
             <div className="bot">
                 <nav className="navigation-bar-bot">
                     {/* The sliding bar is anchored here */}
@@ -490,6 +586,7 @@ function App() {
                     </button>
                 </nav>
             </div>
+            )}
         </div>
     );
 }
