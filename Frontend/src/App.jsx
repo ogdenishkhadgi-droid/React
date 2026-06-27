@@ -21,7 +21,7 @@ L.Icon.Default.mergeOptions({
 function App() {
     const [NodeCount, setNodeCount] = useState(1);
 
-    const [ActiveTab, setActiveTab] = useState(() => localStorage.getItem("userData") ? 'home' : 'login');
+    const [ActiveTab, setActiveTab] = useState(() => localStorage.getItem("userData") ? 'account' : 'login');
 
     const [Translate , setTranslate] = useState('bar');
 
@@ -261,9 +261,65 @@ function App() {
         fetchHospitalsInRadius();
     }, [mylocationLat, mylocationLng]); 
 
+    // fitness tracker
+    const [steps, setSteps] = useState(0);
+    const [isTracking, setIsTracking] = useState(false);
+    const calories = Math.round(steps * 0.04);
+    const distance = (steps * 0.00075).toFixed(2);
+    const activeMinutes = Math.floor(steps / 100);
+    const co2Saved = Math.round(steps * 0.00075 * 192);
 
+    const statsData = [
+        { 
+            icon: '🔥', 
+            label: 'क्यालोरी (Calories)', 
+            value: calories,
+            unit: 'kcal',
+            gradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E72 100%)',
+            accentColor: '#FF6B6B'
+        },
+        { 
+            icon: '🗺️', 
+            label: 'दुरी (Distance)', 
+            value: distance,
+            unit: 'km',
+            gradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)',
+            accentColor: '#4ECDC4'
+        }
+    ];
 
+    useEffect(() => {
+        if (!isTracking) return;
 
+        let lastAcceleration = { x: 0, y: 0, z: 0 };
+        const threshold = 12; // Adjust sensitivity value based on testing
+
+        const handleMotion = (event) => {
+            const acc = event.accelerationIncludingGravity;
+            if (!acc) return;
+
+            // Calculate magnitude change (Delta)
+            const deltaX = Math.abs(acc.x - lastAcceleration.x);
+            const deltaY = Math.abs(acc.y - lastAcceleration.y);
+            const deltaZ = Math.abs(acc.z - lastAcceleration.z);
+
+            // If structural acceleration shifts rapidly past the threshold, register a step
+            if ((deltaX + deltaY + deltaZ) > threshold) {
+                setSteps(prev => prev + 1);
+            }
+
+            lastAcceleration = { x: acc.x, y: acc.y, z: acc.z };
+        };
+
+        window.addEventListener("devicemotion", handleMotion);
+        return () => window.removeEventListener("devicemotion", handleMotion);
+    }, [isTracking, setSteps]);
+    //Save steps
+    useEffect(() => {
+        if (steps > 0) {
+            localStorage.setItem("saved_today_steps", steps.toString());
+        }
+    }, [steps]);
 
     
     return (
@@ -563,37 +619,330 @@ function App() {
 
 
                 {ActiveTab === 'record' && (
-                    <div className="main-container">
-                        <h1>Records</h1>
+                    <div className="hide-scrollbar" style={{ 
+                        padding: "24px 20px 100px 20px", 
+                        color: "#2c3e50",                 
+                        background: "#e7edea",       
+                                  
+                        height: "calc(100vh - 80px)",
+                        marginTop: "58px",
+                        overflowY: "auto",
+                        WebkitOverflowScrolling: "touch",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none" 
+                    }}>
+
+                        {/* Main Steps Card - Changed from dark gradient to crisp dashboard white */}
+                        <div className="animate-pop-up delay-1" style={{
+                            background: "#ffffff",
+                            padding: "24px",
+                            borderRadius: "24px",
+                            marginBottom: "20px",
+                            border: "white solid 1px",
+                            boxShadow: "0 10px 5px rgba(0, 0, 0, 0.04)", 
+                            textAlign: "center"
+                        }}>
+                            <span style={{ fontSize: "13px", color: "#106017", display: "block", marginBottom: "8px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                आजको पैदल यात्रा (Today's Steps)
+                            </span>
+                            
+                            <h1 style={{ 
+                                fontSize: "52px", 
+                                margin: "0 0 4px 0", 
+                                fontWeight: "800",
+                                color: "#0f6d5a" /* Tied directly to your core brand teal color */
+                            }}>
+                                {steps.toLocaleString()}
+                            </h1>
+                            
+                            <span style={{ fontSize: "14px", color: "#0a6405", marginBottom: "16px", display: "block", fontWeight: "500" }}>
+                                / १०,००० लक्ष्य
+                            </span>
+                            
+                            {/* Circular Progress Indicator recolored for light mode */}
+                            <div className="animate-pop-up delay-3" style={{
+                                width: "180px",
+                                height: "180px",
+                                margin: "16px auto",
+                                position: "relative",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                            }}>
+                                <svg width="180" height="180" style={{ position: "absolute", top: 0, left: 0, transform: "rotate(-90deg)" }}>
+                                    <circle
+                                        cx="90"
+                                        cy="90"
+                                        r="80"
+                                        fill="none"
+                                        stroke="#4ccb7b"
+                                        strokeWidth="10"
+                                    />
+                                    <circle
+                                        cx="90"
+                                        cy="90"
+                                        r="80"
+                                        fill="none"
+                                        stroke="url(#progressGradient)"
+                                        strokeWidth="10"
+                                        strokeDasharray={`${(steps / 10000) * 502.4} 502.4`}
+                                        strokeLinecap="round"
+                                        style={{ transition: "stroke-dasharray 0.5s ease" }}
+                                    />
+                                    <defs>
+                                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stopColor="#128a72" />
+                                            <stop offset="100%" stopColor="#0f6d5a" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div style={{ textAlign: "center", zIndex: 1 }}>
+                                    <div style={{ fontSize: "32px", fontWeight: "700", color: "#0c5c3b" }}>
+                                        {Math.min(Math.round((steps / 10000) * 100), 100)}%
+                                    </div>
+                                    <div style={{ fontSize: "12px", color: "#112950", fontWeight: "500" }}>सम्पन्न</div>
+                                </div>
+                            </div>
+
+                            {/* Linear Progress Track bar */}
+                            <div style={{ 
+                                width: "100%", 
+                                height: "8px", 
+                                background: "#1ba344", 
+                                borderRadius: "10px", 
+                                overflow: "hidden", 
+                                margin: "24px 0" 
+                            }}>
+                                <div style={{ 
+                                    width: `${Math.min((steps / 10000) * 100, 100)}%`, 
+                                    height: "100%", 
+                                    background: "#0f6d5a",
+                                    transition: "width 0.3s ease" 
+                                }}></div>
+                            </div>
+
+                            {/* Recolored Interactive Action Button to fit image style */}
+                            <button 
+                                onClick={() => {
+                                    if (!isTracking) {
+                                        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                                            DeviceMotionEvent.requestPermission()
+                                                .then(permissionState => {
+                                                    if (permissionState === 'granted') {
+                                                        setIsTracking(true);
+                                                    }
+                                                })
+                                                .catch(console.error);
+                                        } else {
+                                            setIsTracking(true);
+                                        }
+                                    } else {
+                                        setIsTracking(false);
+                                    }
+                                }}
+                                style={{
+                                    background: isTracking 
+                                        ? "#e53e3e"  /* Red accent similar to Emergency Banner */
+                                        : "#0f6d5a", /* Standard cohesive teal action button color */
+                                    border: "none",
+                                    color: "#fff",
+                                    padding: "14px 32px",
+                                    borderRadius: "16px",
+                                    fontSize: "15px",
+                                    fontWeight: "600",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                    boxShadow: "0 4px 12px rgba(15, 109, 90, 0.15)",
+                                    letterSpacing: "0.3px"
+                                }}
+                            >
+                                {isTracking ? "⏹️ ट्र्याकिङ बन्द गर्नुहोस्" : "▶️ ट्र्याकिङ सुरु गर्नुहोस्"}
+                            </button>
+                        </div>
+
+                        {/* Recolored Stats Grid (Calories and Distance) */}
+                        <div className="animate-pop-up delay-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+                            {[
+                                { icon: '🔥', label: 'क्यालोरी (Calories)', value: calories, unit: 'kcal', borderColor: '#1a1111', iconBg: '#fff5f5' },
+                                { icon: '🗺️', label: 'दुरी (Distance)', value: distance, unit: 'km', borderColor: '#b2f5ea', iconBg: '#e6fffa' }
+                            ].map((stat, idx) => (
+                                <div 
+                                    key={idx}
+                                    style={{
+                                        background: "#ffe884",
+                                        padding: "16px",
+                                        borderRadius: "20px",
+                                        boxShadow: "0 10px 5px rgba(0, 0, 0, 0.04)", 
+                                    }}
+                                >
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                                        <span style={{ fontSize: "13px", color: "#4a5568", fontWeight: "600" ,}}>{stat.label}</span>
+                                        <div style={{ background: stat.iconBg, padding: "6px", borderRadius: "10px", fontSize: "18px" ,}}>{stat.icon}</div>
+                                    </div>
+                                    <p style={{ 
+                                        margin: 0, 
+                                        fontSize: "24px", 
+                                        fontWeight: "700",
+                                        color: "#2c3e50"
+                                        
+                                    }}>
+                                        {stat.value}
+                                        <span style={{ fontSize: "13px", color: "#718096", marginLeft: "4px", fontWeight: "500" }}>
+                                            {stat.unit}
+                                        </span>
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Progress Metrics Section */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "14px", }}>
+                            
+                            {/* Active Time Card */}
+                            <div className="animate-pop-up delay-3" style={{
+                                background: "#ffffff",
+                                padding: "18px",
+                                borderRadius: "20px",
+                                border: "white solid 1px",
+                                boxShadow: "0 10px 5px rgba(0, 0, 0, 0.04)", 
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#4a5568" }}>⏱️ सक्रिय समय (Active Time)</span>
+                                    <span style={{ fontSize: "14px", fontWeight: "700", color: "#6b46c1" }}>
+                                        {activeMinutes} / १०० min
+                                    </span>
+                                </div>
+                                <div style={{ width: "100%", height: "8px", background: "#edf2f7", borderRadius: "10px", overflow: "hidden" }}>
+                                    <div style={{ 
+                                        width: `${Math.min((activeMinutes / 100) * 100, 100)}%`, 
+                                        height: "100%", 
+                                        background: "#6b46c1",
+                                        transition: "width 0.4s ease" 
+                                    }} />
+                                </div>
+                            </div>
+
+                            {/* CO2 Offset Card */}
+                            <div style={{
+                                background: "#ffffff",
+                                padding: "18px",
+                                borderRadius: "20px",
+                                border: "white solid 1px",
+                                boxShadow: "0 10px 5px rgba(0, 0, 0, 0.04)", 
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#4a5568" }}>🌱 पर्यावरण योगदान (CO₂ Saved)</span>
+                                    <span style={{ fontSize: "14px", fontWeight: "700", color: "#2f855a" }}>
+                                        {co2Saved} / १४४० g
+                                    </span>
+                                </div>
+                                <div style={{ width: "100%", height: "8px", background: "#edf2f7", borderRadius: "10px", overflow: "hidden" }}>
+                                    <div style={{ 
+                                        width: `${Math.min((co2Saved / 1440) * 100, 100)}%`, 
+                                        height: "100%", 
+                                        background: "#2f855a",
+                                        transition: "width 0.4s ease" 
+                                    }} />
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 )}
 
                 {ActiveTab === 'account' && (
-                    <div className="main-container">
-                        <div className="account-profile-card animate-pop-up">
-                            <h2 className="section-heading">प्रयोगकर्ता प्रोफाइल (Profile)</h2>
+                    <div className="hide-scrollbar" style={{ 
+                        padding: "24px 20px 100px 20px", 
+                        color: "#2c3e50",                      /* Dark slate text */
+                        background: "#f4f7f6",                 /* Matches light app background canvas */
+                        height: "calc(100vh - 80px)",
+                        marginTop: "80px",
+                        overflowY: "auto",
+                        WebkitOverflowScrolling: "touch",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none" 
+                    }}>
+                        <div className="account-profile-card animate-pop-up" style={{
+                            background: "#ffffff",
+                            padding: "24px",
+                            borderRadius: "24px",
+                            marginBottom: "20px",
+                            border: "1px solid #e2e8f0",
+                            boxShadow: "0 4px 18px rgba(0, 0, 0, 0.04)" /* Crisp light-mode shadow */
+                        }}>
+                            <h2 className="section-heading" style={{ 
+                                margin: "0 0 20px 0", 
+                                fontSize: "20px", 
+                                fontWeight: "700", 
+                                color: "#0f6d5a",                      /* Core brand teal accent */
+                                borderBottom: "2px solid #edf2f7",
+                                paddingBottom: "12px"
+                            }}>
+                                👤 प्रयोगकर्ता प्रोफाइल (Profile)
+                            </h2>
                             
                             {user ? (
-                                <div className="profile-details-group" style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '20px 0' }}>
-                                    <div className="profile-field">
-                                        <strong>पूरा नाम (Name):</strong> <span>{user.fullName || formData.fullName}</span>
-                                    </div>
-                                    <div className="profile-field">
-                                        <strong>ठेगाना (Address):</strong> <span>{user.address || formData.address}</span>
-                                    </div>
-                                    <div className="profile-field">
-                                        <strong>फोन नम्बर (Phone):</strong> <span>{user.phone || formData.phone}</span>
-                                    </div>
+                                <div className="profile-details-group" style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: '10px 0' }}>
+                                    
+                                    {[
+                                        { label: "पूरा नाम (Name)", value: user.fullName || formData.fullName },
+                                        { label: "ठेगाना (Address)", value: user.address || formData.address },
+                                        { label: "फोन नम्बर (Phone)", value: user.phone || formData.phone }
+                                    ].map((field, idx) => (
+                                        <div className="profile-field" key={idx} style={{ 
+                                            display: "flex", 
+                                            flexDirection: "column", 
+                                            gap: "4px",
+                                            background: "#f8fafc",
+                                            padding: "12px 16px",
+                                            borderRadius: "14px",
+                                            border: "1px solid #edf2f7"
+                                        }}>
+                                            <strong style={{ fontSize: "12px", color: "#718096", fontWeight: "600", textTransform: "uppercase" }}>
+                                                {field.label}
+                                            </strong>
+                                            <span style={{ fontSize: "16px", color: "#2c3e50", fontWeight: "500" }}>
+                                                {field.value}
+                                            </span>
+                                        </div>
+                                    ))}
+
                                     {formData.gender && (
-                                        <div className="profile-field">
-                                            <strong>लिङ्ग (Gender):</strong> <span style={{ textTransform: 'capitalize' }}>{formData.gender}</span>
+                                        <div className="profile-field" style={{ 
+                                            display: "flex", 
+                                            flexDirection: "column", 
+                                            gap: "4px",
+                                            background: "#f8fafc",
+                                            padding: "12px 16px",
+                                            borderRadius: "14px",
+                                            border: "1px solid #edf2f7"
+                                        }}>
+                                            <strong style={{ fontSize: "12px", color: "#718096", fontWeight: "600", textTransform: "uppercase" }}>
+                                                लिङ्ग (Gender)
+                                            </strong>
+                                            <span style={{ fontSize: "16px", color: "#2c3e50", fontWeight: "500", textTransform: 'capitalize' }}>
+                                                {formData.gender}
+                                            </span>
                                         </div>
                                     )}
                                     
                                     <button 
                                         type="button" 
                                         className="submit logout-btn" 
-                                        style={{ marginTop: '20px', backgroundColor: '#d9534f' }}
+                                        style={{ 
+                                            marginTop: '12px', 
+                                            backgroundColor: '#e53e3e',  
+                                            height: "55px",      /* Clean crimson-red logout action button */
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            padding: '14px',
+                                            borderRadius: '16px',
+                                            fontSize: '13px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 4px 12px rgba(229, 62, 62, 0.15)',
+                                            transition: 'all 0.2s ease'
+                                        }}
                                         onClick={handleLogout}
                                         onTouchStart={handleLogout}
                                     >
@@ -601,9 +950,27 @@ function App() {
                                     </button>
                                 </div>
                             ) : (
-                                <div style={{ textAlign: 'center', padding: '20px', color: '#7f8c8d' }}>
-                                    <p>कुनै विवरण फेला परेन। कृपया पहिले लगइन गर्नुहोस्।</p>
-                                    <button className="submit" onClick={() => setActiveTab('login')}>Go to Login</button>
+                                <div style={{ textAlign: 'center', padding: '30px 20px', color: '#718096' }}>
+                                    <p style={{ margin: "0 0 20px 0", fontSize: "15px", fontWeight: "500" }}>
+                                        कुनै विवरण फेला परेन। कृपया पहिले लगइन गर्नुहोस्।
+                                    </p>
+                                    <button 
+                                        className="submit" 
+                                        style={{
+                                            background: "#0f6d5a",
+                                            border: "none",
+                                            color: "#fff",
+                                            padding: "12px 28px",
+                                            borderRadius: "14px",
+                                            fontSize: "15px",
+                                            fontWeight: "600",
+                                            cursor: "pointer",
+                                            boxShadow: "0 4px 12px rgba(15, 109, 90, 0.15)"
+                                        }}
+                                        onClick={() => setActiveTab('login')}
+                                    >
+                                        Go to Login
+                                    </button>
                                 </div>
                             )}
                         </div>
