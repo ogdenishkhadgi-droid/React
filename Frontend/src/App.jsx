@@ -333,7 +333,7 @@ function App() {
             
 
             {ActiveTab === 'login' && (
-                <div className="main-container animate-pop-up delay-1 ">
+                <div className="main-container">
                     <div className="header-text ">
                     <h1 className="title formt">Medi Sewa Nepal</h1>
                     <p className="dis formd">तपाईंको आफ्नै घरको चिकित्सा सेवा</p>
