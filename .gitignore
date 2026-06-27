@@ -2,3 +2,7 @@
 
 Frontend/node_modules/
 Frontend/React/dist/
+
+Backend/.env
+Backend/venv/
+Backend/__pycache__/
