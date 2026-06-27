@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useRef,useEffect } from "react";
 import { Hospital, Stethoscope, MapPin, Compass, Activity, Info } from 'lucide-react';
 import "./App.css";
 import bell from './assets/bell.png';
@@ -18,7 +18,7 @@ L.Icon.Default.mergeOptions({
 function App() {
     const [NodeCount, setNodeCount] = useState(1);
 
-    const [ActiveTab , setActiveTab] = useState('login');
+    const [ActiveTab , setActiveTab] = useState('home');
 
     const [Translate , setTranslate] = useState('bar');
 
@@ -35,6 +35,7 @@ function App() {
     const [apiError, setApiError] = useState(null);
 
     //Login Page:
+    const [user, setUser] = useState(null);
     const [Login, setLogin] = useState(false);
     const [Gender, setGender] = useState('null');
     const [formData, setFormData] = useState({
@@ -43,7 +44,46 @@ function App() {
         phone: '',
         gender: Gender
     });
+    const [isOnline, setIsOnline] = useState(!!navigator.onLine);
+
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        if(isOnline){
+            setActiveTab('login')
+        }
+
+        return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    //Auto login
+    useEffect(() => {
+    const savedToken = localStorage.getItem("userToken");
+    const savedUserData = localStorage.getItem("userData");
+
+    if (savedToken && savedUserData) {
+      // Automatically log them in without making them re-type credentials
+      setUser(JSON.parse(savedUserData));
+    }
+    setLoading(false);
+    }, []);
+
+
+    const handleLogout = () => { //Handle Logout
+
+    setUser(null);
     
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("userData");
+    };
+
     useEffect(()=>{
         if (Login){
             setActiveTab('home');
@@ -59,28 +99,49 @@ function App() {
     };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
     const handleSubmit = async (e) => {
      e.preventDefault();
-    try {
-        const response = await fetch("http://localhost:8000/api/form", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(formData), 
+        try {
+        const response = await fetch("http://localhost:8000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({formData}),
         });
-
-        if (!response.ok) {
-            throw new Error(`Server responded with status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Data successfully sent to backend:", data);
-        setActiveTab('home');
         
+        const data = await response.json();
+        
+        if (response.ok) {
+        // 1. Save user state in your React component memory
+        setUser(data.user); 
+        
+        // 2. Remember Login: Save the token/session data to the browser storage
+        localStorage.setItem("userToken", data.access_token);
+        localStorage.setItem("userData", JSON.stringify(data.user));
+        } else {
+        alert(data.detail || "Login failed");
+        }
     } catch (error) {
-        console.error("Error submitting form data:", error);
-        alert("Failed to connect to the backend server.");
+        alert("Could not connect to the backend server.");
     }
     }
 
@@ -332,7 +393,7 @@ function App() {
         )}
             
 
-            {ActiveTab === 'login' && (
+            {ActiveTab === 'login' && isOnline && (
                 <div className="main-container">
                     <div className="header-text ">
                     <h1 className="title formt">Medi Sewa Nepal</h1>
@@ -401,6 +462,7 @@ function App() {
             
             { ActiveTab === 'home' && (<div className="main-container">
             <div className="clickable"> 
+                <a href="tel:102" className="href">
                 <button className="but animate-pop-up delay-1">
                     <Hospital size={28} color="#ffffff" className="hospital-icon"/>
                     <div className="btn-text-group">
@@ -408,6 +470,7 @@ function App() {
                         <p className="dis1">आपतकालीन सेवा</p>
                     </div>
                 </button>
+                </a>
             </div>
 
                 <br />
