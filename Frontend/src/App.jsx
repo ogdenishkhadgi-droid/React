@@ -59,9 +59,29 @@ function App() {
     };
 
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
      e.preventDefault();
+    try {
+        const response = await fetch("http://localhost:8000/api/form", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData), 
+        });
 
+        if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Data successfully sent to backend:", data);
+        setActiveTab('home');
+        
+    } catch (error) {
+        console.error("Error submitting form data:", error);
+        alert("Failed to connect to the backend server.");
+    }
     }
 
     const press_append = () => {
