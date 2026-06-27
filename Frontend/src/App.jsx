@@ -1,4 +1,4 @@
-import { useState, useRef,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Hospital, Stethoscope, MapPin, Compass, Activity, Info } from 'lucide-react';
 import "./App.css";
 import bell from './assets/bell.png';
@@ -18,7 +18,7 @@ L.Icon.Default.mergeOptions({
 function App() {
     const [NodeCount, setNodeCount] = useState(1);
 
-    const [ActiveTab , setActiveTab] = useState('home');
+    const [ActiveTab, setActiveTab] = useState(() => localStorage.getItem("userData") ? 'home' : 'login');
 
     const [Translate , setTranslate] = useState('bar');
 
@@ -35,14 +35,17 @@ function App() {
     const [apiError, setApiError] = useState(null);
 
     //Login Page:
-    const [user, setUser] = useState(null);
-    const [Login, setLogin] = useState(false);
-    const [Gender, setGender] = useState('null');
+    const [user, setUser] = useState(() => {
+        const saved = localStorage.getItem("userData");
+        return saved ? JSON.parse(saved) : null;
+    });
+    const [Login, setLogin] = useState(() => !!localStorage.getItem("userData"));
+    const [Auto , setAuto] = useState(false);
     const [formData, setFormData] = useState({
         fullName: '',
         address: '',
         phone: '',
-        gender: Gender
+        gender: ''
     });
     const [isOnline, setIsOnline] = useState(!!navigator.onLine);
 
@@ -53,10 +56,6 @@ function App() {
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        if(isOnline){
-            setActiveTab('login')
-        }
-
         return () => {
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
@@ -65,30 +64,29 @@ function App() {
 
     //Auto login
     useEffect(() => {
-    const savedToken = localStorage.getItem("userToken");
     const savedUserData = localStorage.getItem("userData");
 
-    if (savedToken && savedUserData) {
-      // Automatically log them in without making them re-type credentials
-      setUser(JSON.parse(savedUserData));
-    }
+    // if (savedUserData) {
+    //   // Automatically log them in without making them re-type credentials
+    //   setUser(JSON.parse(savedUserData));
+    // }
     setLoading(false);
     }, []);
 
 
     const handleLogout = () => { //Handle Logout
-
-    setUser(null);
-    
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("userData");
+        setLogin(false);    
+        setUser(null);
+        setActiveTab('login');
+        localStorage.removeItem("userData");
+        setFormData({
+        fullName: '',
+        address: '',
+        phone: '',
+        gender: ''
+    });
     };
 
-    useEffect(()=>{
-        if (Login){
-            setActiveTab('home');
-        }
-    },[]);
 
     const handleChange = (e) =>{
         const { name, value } = e.target;
@@ -99,44 +97,23 @@ function App() {
     };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
     const handleSubmit = async (e) => {
      e.preventDefault();
         try {
         const response = await fetch("http://localhost:8000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({formData}),
+        body: JSON.stringify(formData),
         });
         
         const data = await response.json();
         
         if (response.ok) {
-        // 1. Save user state in your React component memory
-        setUser(data.user); 
-        
-        // 2. Remember Login: Save the token/session data to the browser storage
-        localStorage.setItem("userToken", data.access_token);
+        setUser(data.user);
         localStorage.setItem("userData", JSON.stringify(data.user));
+        setLogin(true); 
+        setActiveTab('home'); 
+        setAuto(true)
         } else {
         alert(data.detail || "Login failed");
         }
@@ -406,6 +383,7 @@ function App() {
                                 <input
                                 name="fullName"
                                  className="input"
+                                 value={formData.fullName}
                                  onChange={handleChange}
                                  required
                                 />
@@ -415,6 +393,7 @@ function App() {
                                 <input
                                 name="address"
                                  className="input"
+                                 value={formData.address}
                                  onChange={handleChange}
                                  required
                                 />
@@ -428,6 +407,7 @@ function App() {
                                 name="phone"
                                 placeholder="कृपया आफ्नो फोन नम्बर प्रयोग गर्नुहोस्।"
                                 onChange={handleChange}
+                                value={formData.phone}
                                 required
                                 >
                                 
@@ -437,17 +417,21 @@ function App() {
                             <label>
                                 
                                 <b>Gender (लिङ्ग)</b><br />
-                                <button className={`gender ${Gender === "male" ? "m" : ""}`}
-                                
-                                onClick={() => {setGender('male');setFormData(prev => ({ ...prev, gender: 'male' }))}} 
-                                onTouchStart={() => {setGender('male');setFormData(prev => ({ ...prev, gender: 'male' }))}}
-                                >Male</button>
+                                <button 
+                                    type="button"
+                                    className={`gender ${formData.gender === "male" ? "m" : ""}`}
+                                    onClick={() => setFormData(prev => ({ ...prev, gender: 'male' }))}
+                                >
+                                    Male
+                                </button>
 
-                                <button className={`gender ${Gender === "female" ? "f" : ""}`}
-                                 onClick={() => {setGender('female');setFormData(prev => ({ ...prev, gender: 'female' }))}}
-                                 onTouchStart={() => {setGender('female');setFormData(prev => ({ ...prev, gender: 'female' }))}}
-                                 >Female</button>
-
+                                <button 
+                                    type="button"
+                                    className={`gender ${formData.gender === "female" ? "f" : ""}`}
+                                    onClick={() => setFormData(prev => ({ ...prev, gender: 'female' }))}
+                                >
+                                    Female
+                                </button>
                             </label>
 
                             <button type="submit" className="submit">Submit</button>
@@ -553,7 +537,43 @@ function App() {
 
                 {ActiveTab === 'account' && (
                     <div className="main-container">
-                        <h1>Account</h1>
+                        <div className="account-profile-card animate-pop-up">
+                            <h2 className="section-heading">प्रयोगकर्ता प्रोफाइल (Profile)</h2>
+                            
+                            {user ? (
+                                <div className="profile-details-group" style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '20px 0' }}>
+                                    <div className="profile-field">
+                                        <strong>पूरा नाम (Name):</strong> <span>{user.fullName || formData.fullName}</span>
+                                    </div>
+                                    <div className="profile-field">
+                                        <strong>ठेगाना (Address):</strong> <span>{user.address || formData.address}</span>
+                                    </div>
+                                    <div className="profile-field">
+                                        <strong>फोन नम्बर (Phone):</strong> <span>{user.phone || formData.phone}</span>
+                                    </div>
+                                    {formData.gender && (
+                                        <div className="profile-field">
+                                            <strong>लिङ्ग (Gender):</strong> <span style={{ textTransform: 'capitalize' }}>{formData.gender}</span>
+                                        </div>
+                                    )}
+                                    
+                                    <button 
+                                        type="button" 
+                                        className="submit logout-btn" 
+                                        style={{ marginTop: '20px', backgroundColor: '#d9534f' }}
+                                        onClick={handleLogout}
+                                        onTouchStart={handleLogout}
+                                    >
+                                        Log Out (बाहिर निस्कनुहोस्)
+                                    </button>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '20px', color: '#7f8c8d' }}>
+                                    <p>कुनै विवरण फेला परेन। कृपया पहिले लगइन गर्नुहोस्।</p>
+                                    <button className="submit" onClick={() => setActiveTab('login')}>Go to Login</button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
               
