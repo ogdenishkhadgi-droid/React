@@ -404,7 +404,68 @@ function App() {
 
         fetchNotifications();
     }, [ActiveTab]);
+    
+    //Health calculator
+    const [calcData, setCalcData] = useState({
+            age: "",
+            cholesterol: "",
+            systolic: "",
+            diastolic: "",
+            height: "",
+            weight: ""
+        });
+        const [calcResult, setCalcResult] = useState(null);
 
+        const evaluateHealthMetrics = () => {
+            const { age, cholesterol, systolic, diastolic, height, weight } = calcData;
+            if (!age || !cholesterol || !systolic || !diastolic || !height || !weight) {
+                alert("कृपया सबै विवरणहरू भर्नुहोस् (Please complete all inputs)");
+                return;
+            }
+
+            // Convert string states into numerical bounds
+            const s = parseFloat(systolic);
+            const d = parseFloat(diastolic);
+            const chol = parseFloat(cholesterol);
+            const hMeters = parseFloat(height) / 100;
+            const wKg = parseFloat(weight);
+            const bmi = (wKg / (hMeters * hMeters)).toFixed(1);
+
+            let isHealthy = true;
+            let bmiStatus = "Normal";
+            let plan = [];
+
+            // Analyze basic thresholds
+            if (bmi < 18.5) { bmiStatus = "Underweight"; isHealthy = false; }
+            else if (bmi >= 25) { bmiStatus = "Overweight"; isHealthy = false; }
+
+            if (s > 130 || d > 85 || s < 90 || d < 60) isHealthy = false;
+            if (chol > 200) isHealthy = false;
+
+            // Build specific preventative routing text arrays
+            if (isHealthy) {
+                plan = [
+                    "नियमित सन्तुलित र स्वस्थ आहार जारी राख्नुहोस् (Maintain your clean dietary regime).",
+                    "दैनिक ३० मिनेट व्यायाम वा १०,००० पाइला हिँड्ने बानीलाई निरन्तरता दिनुहोस् (Keep hitting daily fitness goals).",
+                    "प्रशस्त मात्रामा पानी पिउनुहोस् र पर्याप्त आराम गर्नुहोस् (Stay well hydrated with solid 7-8 hour sleep cycles).",
+                    "वर्षमा एक पटक नियमित स्वास्थ्य परीक्षण गराउनुहोस् (Keep up seasonal medical health checkups)."
+                ];
+            } else {
+                plan = [
+                    s > 130 || d > 85 ? "रक्तचाप व्यवस्थापनका लागि नुनको सेवन कम गर्नुहोस् र डाक्टरसँग परामर्श गर्नुहोस् (Reduce sodium intake to balance BP trends)." : null,
+                    chol > 200 ? "चिल्लो र जंक फुड त्याग्नुहोस्, ओमेगा-३ युक्त खाना खानुहोस् (Lower fried/processed oil intake immediately)." : null,
+                    bmiStatus === "Overweight" ? "दैनिक कार्डियो व्यायाम बढाउनुहोस् र क्यालोरी नियन्त्रण गर्नुहोस् (Increase daily dynamic steps tracker output)." : null,
+                    "विस्तृत परीक्षणका लागि नजिकैको अस्पतालमा डाक्टरसँग भेट्नुहोस् (Consult an expert physician to rule out chronic factors)."
+                ].filter(Boolean);
+            }
+
+            setCalcResult({
+                status: isHealthy ? "Healthy" : "Attention Needed",
+                bmi,
+                bmiStatus,
+                plan
+            });
+        };
     
     return (
         <div className="app_contain">
@@ -842,6 +903,49 @@ function App() {
                             >
                                 {isTracking ? "⏹️ ट्र्याकिङ बन्द गर्नुहोस्" : "▶️ ट्र्याकिङ सुरु गर्नुहोस्"}
                             </button>
+                        </div>
+
+                        <div className="node-but" style={{marginBottom: "20px"}}>
+                            <h1 >  Health Calculator</h1>
+                            {Prem ? (
+                                            <button onClick={() => {setActiveTab('calc')}} style={{
+                                                width: "100%",
+                                                background: "#2d8cff", // Zoom Blue
+                                                border: "none",
+                                                color: "#ffffff",
+                                                padding: "12px",
+                                                borderRadius: "14px",
+                                                fontSize: "14px",
+                                                fontWeight: "600",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "2px",
+                                                boxShadow: "0 4px 12px rgba(45, 140, 255, 0.25)"
+                                            }} >
+                                               GO 
+                                            </button>
+                                        ) : (
+                                            <div style={{
+                                                width: "100%",
+                                                background: "#fff5f5",
+                                                border: "1px dashed #feb2b2",
+                                                color: "#c53030",
+                                                padding: "12px",
+                                                borderRadius: "14px",
+                                                fontSize: "13px",
+                                                fontWeight: "600",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "8px"
+                                            }}>
+                                                <Lock size={16} />
+                                                Access premium to proceed
+                                            </div>
+                                        )}
+                            
                         </div>
 
                         {/* Recolored Stats Grid (Calories and Distance) */}
@@ -1613,6 +1717,173 @@ function App() {
                             </div>
                         </div>
                     </div> 
+                )}
+
+                {ActiveTab === 'calc' && (
+                    <div className="hide-scrollbar" style={{ 
+                        padding: "24px 20px 100px 20px", 
+                        color: "#2c3e50",                 
+                        background: "#e7edea",       
+                        height: "calc(100vh - 80px)",
+                        marginTop: "58px",
+                        overflowY: "auto",
+                        WebkitOverflowScrolling: "touch",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none" 
+                    }}>
+                         <header className="floating-header">
+                            <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
+                            <div className="header-title" style={{ color: "#0f6d5a" }}>Health Calculator</div>
+                        </header>
+
+
+                        {/* Calculator Form Card */}
+                        <div className="animate-pop-up delay-1" style={{
+                            background: "#ffffff",
+                            padding: "24px",
+                            borderRadius: "24px",
+                            marginBottom: "20px",
+                            boxShadow: "0 10px 5px rgba(0, 0, 0, 0.04)"
+                        }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                                <div>
+                                    <label style={{ fontSize: "13px", fontWeight: "600", color: "#4a5568", display: "block", marginBottom: "6px" }}>
+                                        उमेर (Age)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="Yrs" 
+                                        className="input"
+                                        style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #edf2f7", background: "#f8fafc" }}
+                                        onChange={(e) => setCalcData({...calcData, age: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: "13px", fontWeight: "600", color: "#4a5568", display: "block", marginBottom: "6px" }}>
+                                        कोलेस्ट्रोल (Cholesterol)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="mg/dL" 
+                                        className="input"
+                                        style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #edf2f7", background: "#f8fafc" }}
+                                        onChange={(e) => setCalcData({...calcData, cholesterol: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: "13px", fontWeight: "600", color: "#4a5568", display: "block", marginBottom: "6px" }}>
+                                        सिस्टोलिक BP (Systolic)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="mmHg (e.g. 120)" 
+                                        className="input"
+                                        style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #edf2f7", background: "#f8fafc" }}
+                                        onChange={(e) => setCalcData({...calcData, systolic: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: "13px", fontWeight: "600", color: "#4a5568", display: "block", marginBottom: "6px" }}>
+                                        डायस्टोलिक BP (Diastolic)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="mmHg (e.g. 80)" 
+                                        className="input"
+                                        style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #edf2f7", background: "#f8fafc" }}
+                                        onChange={(e) => setCalcData({...calcData, diastolic: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: "13px", fontWeight: "600", color: "#4a5568", display: "block", marginBottom: "6px" }}>
+                                        उचाइ (Height)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="cm" 
+                                        className="input"
+                                        style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #edf2f7", background: "#f8fafc" }}
+                                        onChange={(e) => setCalcData({...calcData, height: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: "13px", fontWeight: "600", color: "#4a5568", display: "block", marginBottom: "6px" }}>
+                                        तौल (Weight)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="kg" 
+                                        className="input"
+                                        style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #edf2f7", background: "#f8fafc" }}
+                                        onChange={(e) => setCalcData({...calcData, weight: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={evaluateHealthMetrics}
+                                style={{
+                                    width: "100%",
+                                    background: "#0f6d5a",
+                                    border: "none",
+                                    color: "#fff",
+                                    padding: "14px",
+                                    borderRadius: "16px",
+                                    fontSize: "15px",
+                                    fontWeight: "600",
+                                    cursor: "pointer",
+                                    marginTop: "20px",
+                                    boxShadow: "0 4px 12px rgba(15, 109, 90, 0.2)"
+                                }}
+                            >
+                                📊 स्वास्थ्य जाँच गर्नुहोस् (Evaluate Health)
+                            </button>
+                        </div>
+
+                        {/* Results Screen Segment */}
+                        {calcResult && (
+                            <div className="animate-pop-up" style={{
+                                background: "#ffffff",
+                                padding: "24px",
+                                borderRadius: "24px",
+                                border: `2px solid ${calcResult.status === "Healthy" ? "#4ccb7b" : "#ff8e72"}`,
+                                boxShadow: "0 10px 5px rgba(0, 0, 0, 0.04)"
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                                    <span style={{ fontSize: "14px", fontWeight: "700", textTransform: "uppercase", color: "#718096" }}>
+                                        नतिजा (Assessment Result)
+                                    </span>
+                                    <span style={{
+                                        background: calcResult.status === "Healthy" ? "#e6fffa" : "#fff5f5",
+                                        color: calcResult.status === "Healthy" ? "#0f6d5a" : "#e53e3e",
+                                        padding: "6px 14px",
+                                        borderRadius: "20px",
+                                        fontWeight: "700",
+                                        fontSize: "14px"
+                                    }}>
+                                        {calcResult.status === "Healthy" ? "🟢 स्वस्थ (Healthy)" : "⚠️ ध्यान दिनुहोस् (Action Required)"}
+                                    </span>
+                                </div>
+
+                                {calcResult.bmi && (
+                                    <p style={{ margin: "0 0 12px 0", fontSize: "15px" }}>
+                                        <strong>BMI Metric:</strong> {calcResult.bmi} ({calcResult.bmiStatus})
+                                    </p>
+                                )}
+
+                                <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "16px", marginTop: "12px" }}>
+                                    <h4 style={{ margin: "0 0 8px 0", color: "#0f6d5a", fontSize: "15px", fontWeight: "700" }}>
+                                        📋 सुझाव मार्गनिर्देशन (Your Health Action Plan)
+                                    </h4>
+                                    <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "14px", lineHeight: "1.6", color: "#4a5568" }}>
+                                        {calcResult.plan.map((step, index) => (
+                                            <li key={index} style={{ marginBottom: "6px" }}>{step}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 )}
 
             {['home', 'record', 'account','Specialist','Guide','Symptoms', 'notify'].includes(ActiveTab) && (
