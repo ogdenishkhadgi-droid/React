@@ -21,6 +21,7 @@ if not MONGODB_URL:
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client.medi_sewa_db            
 users_collection = db.users
+notifications_collection = db.notifications
 
 app.add_middleware(
     CORSMiddleware,
@@ -107,6 +108,65 @@ async def send_data(phone: str):
           
     except HTTPException as http_ex:
         raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database lookup error: {str(e)}"
+        )
+
+
+@app.get('/api/notifications')
+async def get_notifications():
+    try:
+        notifications = []
+        
+        
+        count = await notifications_collection.count_documents({})
+        
+        if count == 0:
+          
+            await notifications_collection.insert_many([
+                {
+                    "title": "स्वास्थ्य शिविर सम्बन्धी जानकारी",
+                    "details": "आउँदो शनिबार बिहान १० बजेदेखि स्थानीय स्वास्थ्य चौकीमा नि:शुल्क स्वास्थ्य परीक्षण शिविर सञ्चालन हुँदैछ।"
+                },
+                {
+                    "title": "नयाँ लक्षणहरू अपडेट गरियो",
+                    "details": "मौसम परिवर्तनसँगै फैलिन सक्ने केही नयाँ भाइरल ज्वरोका लक्षणहरू एपमा थपिएका छन्।"
+                },
+                {
+                    "title": "परामर्श सेवा उपलब्ध",
+                    "details": "अब तपाईंले एपमार्फत सिधै विशेषज्ञ डाक्टरहरूसँग अनलाइन परामर्श लिन सक्नुहुनेछ। आफ्नो अनुकूल समय बुक गर्न 'Specialist' ट्याबमा जानुहोस्।"
+                },
+                {
+                    "title": "तपाईंको प्रोफाइल अपडेट भयो",
+                    "details": "तपाईंको स्वास्थ्य सम्बन्धी रेकर्ड र व्यक्तिगत विवरणहरू सफलतापूर्वक सुरक्षित गरिएका छन्।"
+                },
+                {
+                    "title": "डेंगी रोग सम्बन्धी सतर्कता",
+                    "details": "तपाईंको क्षेत्रमा डेंगीको जोखिम बढेको पाइएकाले झुलको प्रयोग गर्न र घरको वरिपरि पानी जम्न नदिन अनुरोध गरिन्छ।"
+                },
+                {
+                    "title": "खोप कार्यक्रमको सूचना",
+                    "details": "आउँदो हप्ता ५ वर्ष मुनिका बालबालिकाहरूका लागि भिटामिन 'ए' र फोलिक एसिड खुवाउने कार्यक्रम स्वास्थ्य चौकीमा हुँदैछ।"
+                },
+                {
+                    "title": "पिउने पानीको शुद्धीकरण",
+                    "details": "वर्षायाममा पानीजन्य रोगहरू फैलन सक्ने हुनाले पानी उमालेर वा फिल्टर गरेर मात्र पिउनु हुन हार्दिक अनुरोध छ।"
+                }
+            ])
+        
+        
+        cursor = notifications_collection.find({})
+        async for document in cursor:
+            document["_id"] = str(document["_id"])  
+            notifications.append({
+                "title": document.get("title", "No Title"),
+                "details": document.get("details", "No Details")
+            })
+            
+        return {"status": "success", "notifications": notifications}
+        
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

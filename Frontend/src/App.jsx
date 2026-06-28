@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Hospital, Stethoscope, MapPin, Compass, Activity, Info } from 'lucide-react';
+import { Hospital, Stethoscope, MapPin, Compass, Activity, Info, Video, Lock } from 'lucide-react';
 import "./App.css";
 import bell from './assets/bell.png';
 
@@ -21,7 +21,7 @@ L.Icon.Default.mergeOptions({
 function App() {
     const [NodeCount, setNodeCount] = useState(1);
 
-    const [ActiveTab, setActiveTab] = useState(() => localStorage.getItem("userData") ? 'account' : 'login');
+    const [ActiveTab, setActiveTab] = useState(() => localStorage.getItem("userData") ? 'home' : 'login');
 
     const [Translate , setTranslate] = useState('bar');
 
@@ -43,6 +43,7 @@ function App() {
         const saved = localStorage.getItem("userData");
         return saved ? JSON.parse(saved) : null;
     });
+    const [Prem ,setPrem] = useState(false);
     const [Login, setLogin] = useState(() => !!localStorage.getItem("userData"));
     const [Auto , setAuto] = useState(false);
     const [formData, setFormData] = useState({
@@ -52,6 +53,59 @@ function App() {
         gender: ''
     });
     const [isOnline, setIsOnline] = useState(!!navigator.onLine);
+
+    //specialists
+    const [specialistSearch, setSpecialistSearch] = useState("");
+    const dummySpecialists = [
+    {
+        id: 1,
+        name: "Dr. Ram Shrestha (Cardiologist)",
+        hospital: "Tribhuvan University Teaching Hospital (TUTH)",
+        fields: ["Heart Care", "Cardiology", "ECG"]
+    },
+    {
+        id: 2,
+        name: "Dr. Sita Thapa (Pediatrician)",
+        hospital: "Kanti Children's Hospital",
+        fields: ["Child Health", "Pediatrics", "Vaccination"]
+    },
+    {
+    id: 3,
+    name: "Dr. Bhagawan Koirala (Cardiothoracic Surgeon)",
+    hospital: "Manmohan Cardiothoracic Vascular and Transplant Center",
+    fields: ["Heart Surgery", "Cardiothoracic", "Valve Replacement"]
+    },
+    {
+    id: 4,
+    name: "Dr. Sanduk Ruit (Ophthalmologist)",
+    hospital: "Tilganga Institute of Ophthalmology",
+    fields: ["Eye Care", "Cataract Surgery", "Ophthalmology"]
+    },
+    {
+    id: 5,
+    name: "Dr. Govinda KC (Orthopedic Surgeon)",
+    hospital: "Tribhuvan University Teaching Hospital (TUTH)",
+    fields: ["Bone & Joint", "Orthopedics", "Trauma Care"]
+    },
+    {
+    id: 6,
+    name: "Dr. Aruna Uprety (Public Health & Nutrition Specialist)",
+    hospital: "Nutritious Food Nepal Initiative",
+    fields: ["Women's Health", "Nutrition", "Community Medicine"]
+    },
+    {
+    id: 7,
+    name: "Dr. Pukar Chandra Shrestha (Transplant Surgeon)",
+    hospital: "Human Organ Transplant Center (Shahid Dharma Bhakta Hospital)",
+    fields: ["Kidney Transplant", "Liver Specialist", "Urology"]
+    },
+    {
+    id: 8,
+    name: "Dr. Jaganath Sharma (Neurologist)",
+    hospital: "Upendra Devkota Memorial National Institute of Neurological Allied Sciences",
+    fields: ["Brain & Spine", "Neurology", "Stroke Management"]
+    }
+    ];
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -262,7 +316,7 @@ function App() {
     }, [mylocationLat, mylocationLng]); 
 
     // fitness tracker
-    const [steps, setSteps] = useState(0);
+    const [steps, setSteps] = useState(3000);
     const [isTracking, setIsTracking] = useState(false);
     const calories = Math.round(steps * 0.04);
     const distance = (steps * 0.00075).toFixed(2);
@@ -320,6 +374,36 @@ function App() {
             localStorage.setItem("saved_today_steps", steps.toString());
         }
     }, [steps]);
+
+
+    //Notification:
+    const [notifications, setNotifications] = useState([]);
+    const [notifLoading, setNotifLoading] = useState(false);
+
+
+    // Pull notifications from API when ActiveTab shifts to 'notify'
+    useEffect(() => {
+        if (ActiveTab !== 'notify') return;
+
+        const fetchNotifications = async () => {
+            setNotifLoading(true);
+            try {
+                const response = await fetch("http://localhost:8000/api/notifications");
+                const data = await response.json();
+                if (response.ok) {
+                    setNotifications(data.notifications);
+                } else {
+                    console.error("Failed to fetch notifications:", data.detail);
+                }
+            } catch (error) {
+                console.error("Error communicating with notification engine:", error);
+            } finally {
+                setNotifLoading(false);
+            }
+        };
+
+        fetchNotifications();
+    }, [ActiveTab]);
 
     
     return (
@@ -446,7 +530,7 @@ function App() {
                 </div>
                 <div className="notification-container">
                     <button className="notify-but" onClick={Clearit} onTouchStart={Clearit}>
-                        <img src={bell} className="bell" alt="Notifications" />
+                        <img src={bell} className="bell" alt="Notifications"  onClick={() => {setActiveTab('notify')}}/>
                     </button>
                     {NodeCount > 0 && <div className="badge">{NodeCount}</div>}
                 </div>
@@ -708,7 +792,7 @@ function App() {
                             <div style={{ 
                                 width: "100%", 
                                 height: "8px", 
-                                background: "#1ba344", 
+                                background: "#3bd469", 
                                 borderRadius: "10px", 
                                 overflow: "hidden", 
                                 margin: "24px 0" 
@@ -716,7 +800,7 @@ function App() {
                                 <div style={{ 
                                     width: `${Math.min((steps / 10000) * 100, 100)}%`, 
                                     height: "100%", 
-                                    background: "#0f6d5a",
+                                    background: "#0b6956",
                                     transition: "width 0.3s ease" 
                                 }}></div>
                             </div>
@@ -812,11 +896,11 @@ function App() {
                                         {activeMinutes} / १०० min
                                     </span>
                                 </div>
-                                <div style={{ width: "100%", height: "8px", background: "#edf2f7", borderRadius: "10px", overflow: "hidden" }}>
+                                <div style={{ width: "100%", height: "8px", background: "#6e3ebd", borderRadius: "10px", overflow: "hidden" }}>
                                     <div style={{ 
                                         width: `${Math.min((activeMinutes / 100) * 100, 100)}%`, 
                                         height: "100%", 
-                                        background: "#6b46c1",
+                                        background: "#250869",
                                         transition: "width 0.4s ease" 
                                     }} />
                                 </div>
@@ -831,12 +915,12 @@ function App() {
                                 boxShadow: "0 10px 5px rgba(0, 0, 0, 0.04)", 
                             }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#4a5568" }}>🌱 पर्यावरण योगदान (CO₂ Saved)</span>
+                                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#0c5405" }}>🌱 पर्यावरण योगदान (CO₂ Saved)</span>
                                     <span style={{ fontSize: "14px", fontWeight: "700", color: "#2f855a" }}>
                                         {co2Saved} / १४४० g
                                     </span>
                                 </div>
-                                <div style={{ width: "100%", height: "8px", background: "#edf2f7", borderRadius: "10px", overflow: "hidden" }}>
+                                <div style={{ width: "100%", height: "8px", background: "#16e048", borderRadius: "10px", overflow: "hidden" }}>
                                     <div style={{ 
                                         width: `${Math.min((co2Saved / 1440) * 100, 100)}%`, 
                                         height: "100%", 
@@ -925,6 +1009,28 @@ function App() {
                                             </span>
                                         </div>
                                     )}
+
+                                    <div className="profile-field" style={{ 
+                                            display: "flex", 
+                                            flexDirection: "column", 
+                                            gap: "4px",
+                                            background: "#f8fafc",
+                                            padding: "12px 16px",
+                                            borderRadius: "14px",
+                                            border: "1px solid #edf2f7"
+                                        }}>
+                                            <strong style={{ fontSize: "12px", color: "#718096", fontWeight: "600", textTransform: "uppercase" }}>
+                                                Set Premium Account
+                                            </strong>
+                                            <span style={{ fontSize: "16px", color: "#2c3e50", fontWeight: "500", textTransform: 'capitalize' }}>
+                                                <button 
+                                                className={`butt1 ${Prem ? "green" : ""}`}
+                                                onClick={()=> {setPrem(true)}}
+                                                >
+                                                    Activate
+                                                </button>
+                                            </span>
+                                        </div>
                                     
                                     <button 
                                         type="button" 
@@ -979,11 +1085,96 @@ function App() {
               
 
                 {ActiveTab === 'Specialist' && (
-                    <div className="screen-wrapper specialist">
+                    <div className="screen-wrapper specialist" style={{ background: "#f4f7f6", height: "100vh" }}>
                         <header className="floating-header">
                             <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
-                            <div className="map-header-title">विशेषज्ञ</div>
+                            <div className="header-title" style={{ color: "#0f6d5a" }}>विशेषज्ञ (Specialists)</div>
                         </header>
+
+                        <div className="specialist-content-scroll" style={{
+                            marginTop: "85px",
+                            height: "calc(100vh - 170px)",
+                            overflowY: "auto",
+                            padding: "0 20px",
+                            scrollbarWidth: "none"
+                        }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "16px", paddingBottom: "40px" }}>
+                                {dummySpecialists.map((spec) => (
+                                    <div key={spec.id} className="animate-pop-up" style={{
+                                        background: "#ffffff",
+                                        padding: "18px",
+                                        borderRadius: "20px",
+                                        border: "1px solid #edf2f7",
+                                        boxShadow: "0 10px 5px rgba(0, 0, 0, 0.02)"
+                                    }}>
+                                        <h3 style={{ margin: "0 0 4px 0", fontSize: "18px", color: "#2c3e50", fontWeight: "700" }}>
+                                            {spec.name}
+                                        </h3>
+                                        <p style={{ margin: "0 0 10px 0", fontSize: "13px", color: "#718096", fontWeight: "500" }}>
+                                            🏥 {spec.hospital}
+                                        </p>
+                                        
+                                        {/* Specialist Field In (Mapping Lists) */}
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
+                                            {spec.fields.map((field, fIdx) => (
+                                                <span key={fIdx} style={{
+                                                    background: "#e6fffa",
+                                                    color: "#0f6d5a",
+                                                    fontSize: "12px",
+                                                    padding: "4px 10px",
+                                                    borderRadius: "20px",
+                                                    fontWeight: "600",
+                                                    border: "1px solid #b2f5ea"
+                                                }}>
+                                                    {field}
+                                                </span>
+                                            ))}
+                                        </div>
+
+                                        {/* Premium Conditional Zoom Login Display */}
+                                        {Prem ? (
+                                            <button style={{
+                                                width: "100%",
+                                                background: "#2d8cff", // Zoom Blue
+                                                border: "none",
+                                                color: "#ffffff",
+                                                padding: "12px",
+                                                borderRadius: "14px",
+                                                fontSize: "14px",
+                                                fontWeight: "600",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "8px",
+                                                boxShadow: "0 4px 12px rgba(45, 140, 255, 0.25)"
+                                            }} onClick={() => alert(`Launching Zoom call with ${spec.name}...`)}>
+                                                <Video size={18} />
+                                                Zoom Login & Consultation
+                                            </button>
+                                        ) : (
+                                            <div style={{
+                                                width: "100%",
+                                                background: "#fff5f5",
+                                                border: "1px dashed #feb2b2",
+                                                color: "#c53030",
+                                                padding: "12px",
+                                                borderRadius: "14px",
+                                                fontSize: "13px",
+                                                fontWeight: "600",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "8px"
+                                            }}>
+                                                <Lock size={16} />
+                                                Access premium to proceed
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -1129,269 +1320,302 @@ function App() {
 
                 {ActiveTab === 'Symptoms' && (
                     <div className="screen-wrapper specialist" >
+                    <header className="floating-header">
+                        <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
+                        <div className="header-title">रोग र लक्षणहरू</div>
+                    </header>
+
+                    <div className="symptoms-container">
+                        {/* Search Box - Matches English & Nepali Keywords */}
+                        <div className="search-box-wrapper animate-pop-up delay-1">
+                            <input 
+                                type="text" 
+                                placeholder="लक्षणहरू खोज्नुहोस् (Search symptoms... e.g., fever, cough)" 
+                                className="symptoms-search-input"
+                                onChange={(e) => {
+                                    const term = e.target.value.toLowerCase().trim();
+                                    const items = document.querySelectorAll('.disease-card-item');
+                                    
+                                    items.forEach(item => {
+                                        const symptoms = item.getAttribute('data-symptoms').toLowerCase();
+                                        if (symptoms.includes(term)) {
+                                            item.style.display = 'block';
+                                        } else {
+                                            item.style.display = 'none';
+                                        }
+                                    });
+                                }}
+                            />
+                        </div>
+
+                        {/* Scrollable Disease List */}
+                        <div className="disease-scroll-list">
+                            {[
+                                // High Severity Diseases
+                                { name: "Rabies (रेलेज)", severity: "High", transmission: "जनावरको टोकाइबाट (कुकुर, बाँदर)", symptoms: "टोकेको ठाउँमा झनझनाहट हुनु, अत्यधिक उत्तेजना हुनु, पानीसँग डराउनु (हाइड्रोफोबिया), र्‍याल अत्यधिक आउनु", keywords: "hydrophobia, tingling bite, excessive saliva, agitation, panic, water fear" },
+                                { name: "Cholera (हैजा)", severity: "High", transmission: "दूषित खाना वा पानी", symptoms: "प्रशस्त 'चौलानी जस्तो' दिसा हुनु, अत्यधिक बान्ता हुनु, शरीरमा पानीको मात्रा तीव्र रूपमा कम हुनु", keywords: "rice water stool, watery diarrhea, severe vomiting, dehydration, fluid loss" },
+                                { name: "Meningococcal Meningitis (मेनिन्जाइटिस)", severity: "High", transmission: "स्वासप्रश्वासका मसिना थोपाहरूबाट", symptoms: "अचानक उच्च ज्वरो आउनु, कडा टाउको दुख्नु, घाँटी कडा हुनु, अलमल्ल पर्नु", keywords: "high fever, severe headache, stiff neck, confusion, altered mental state" },
+                                { name: "Neonatal Tetanus (धनुष्टंकार)", severity: "High", transmission: "नाभी काट्दा वा सम्हाल्दा फोहोर औजारको प्रयोग हुनु", symptoms: "बङ्गारा बाँधिनु (लकज), मांसपेशीहरू निकै दुख्नु र बाउँडिनु, शरीर धनुष जस्तै कडा हुनु", keywords: "lockjaw, muscle spasms, rigid body, painful stiffness, newborn tetanus" },
+                                { name: "Japanese Encephalitis (मस्तिष्क ज्वरो)", severity: "High", transmission: "क्युलेक्स (Culex) लामखुट्टेको टोकाइबाट", symptoms: "उच्च ज्वरो आउनु, घाँटी कडा हुनु, कम्पन हुनु, छारे रोग जस्तो काँप्नु, बेहोस हुनु", keywords: "high fever, stiff neck, tremors, seizures, convulsions, unconsciousness, brain fever" },
+
+                                // Medium Severity Diseases
+                                { name: "Pneumonia / ARI (न्युमोनिया)", severity: "Medium", transmission: "हावामा फैलिने स्वासप्रश्वासका थोपाहरूबाट", symptoms: "छिटो-छिटो सास फेर्नु, कोखा हान्नु (छाती भित्र धसिनु), घ्यारघ्यारसहितको खोकी, ओठ निलो हुनु", keywords: "fast breathing, chest indrawing, wheezing, rattling cough, blue lips, cyanosis, short of breath" },
+                                { name: "Typhoid Fever (म्याद थपे ज्वरो)", severity: "Medium", transmission: "दूषित खाना/पानी वा दिसा-मुख मार्गबाट", symptoms: "दिनदिनै खुड्किलो जस्तै बढ्दै जाने ज्वरो, पेट निकै दुख्नु, सुक्खा खोकी, अत्यधिक थकान वा शिथिलता", keywords: "step ladder fever, progressive fever, stomach pain, abdominal ache, dry cough, extreme fatigue, weakness" },
+                                { name: "Scrub Typhus (स्क्रब टाइफस)", severity: "Medium", transmission: "संक्रमित सानो किर्ना (chigger) को टोकाइबाट", symptoms: "उच्च ज्वरो आउनु, कडा टाउको दुख्नु, चुरोटले पोलेको जस्तो कालो पाप्रा (eschar) बस्नु", keywords: "high fever, severe headache, black eschar, cigarette burn mark, scab, mite bite" },
+                                { name: "Leptospirosis (लेप्टोस्पाइरोसिस)", severity: "Medium", transmission: "बाढीको पानीमा मुसाको पिसाबसँग प्रत्यक्ष सम्पर्क हुनु", symptoms: "अचानक ज्वरो आउनु, आँखा बिना पीप रातो हुनु, पिँडौलाको मांसपेशी निकै दुख्नु, जन्डिस हुनु", keywords: "sudden fever, red eyes without pus, severe calf muscle pain, jaundice, yellow skin, rat urine" },
+                                { name: "Chronic Kidney Disease (मिर्गौला रोग)", severity: "Medium", transmission: "लामो समयसम्मको मधुमेह वा उच्च रक्तचाप", symptoms: "सुरुवाती चरणमा लक्षण नदेखिनु; पछि शरीर सुन्निनु, थकान लाग्नु, मिर्गौलाको कार्यक्षमता घट्दै जानु", keywords: "asymptomatic early, body swelling, edema, chronic fatigue, low kidney function, uremia" },
+
+                                // Low Severity Diseases
+                                { name: "The Common Cold (रुघाखोकी)", severity: "Low", transmission: "स्वासप्रश्वासका भाइरसका कणहरू", symptoms: "नाक बन्द हुनु, सिंगान बग्नु, हाँछ्युँ आउनु, घाँटी सामान्य दुख्नु", keywords: "stuffy nose, blocked nose, runny nose, sneezing, mild sore throat, common cold" },
+                                { name: "Gastritis (ग्यास्ट्रिक / एसिडिटी)", severity: "Low", transmission: "एच. पाइलोरी (H. pylori) संक्रमण वा अस्वस्थ जीवनशैली", symptoms: "पेटको माथिल्लो भाग पोल्नु, पेट फुल्नु, तारन्तार वाकवाकी लाग्नु", keywords: "upper stomach burning, heartburn, bloating, nausea, acidity, indigestion" },
+                                { name: "Giardiasis (जीयार्डिया)", severity: "Low", transmission: "राम्रोसँग उपचार नगरिएको वा दूषित पानीको प्रयोग", symptoms: "गन्ध आउने चिल्लो दिसा हुनु, पेट फुल्नु, अमिलो डकार आउनु", keywords: "foul smelling greasy stool, bloating, sulfur burps, greasy diarrhea" },
+                                { name: "Conjunctivitis (आँखा पाक्ने रोग)", severity: "Low", transmission: "आँखाबाट निस्कने तरल पदार्थको प्रत्यक्ष सम्पर्कबाट", symptoms: "आँखाको सेतो भाग गाढा गुलाबी वा रातो हुनु, आँखा बिझाउनु, बाक्लो पहेंलो कचेरा लाग्नु", keywords: "pink eye, red eyes, eye irritation, gritty feeling, thick yellow discharge, crusty eyes" },
+                                { name: "Ringworm / Athlete's Foot", severity: "Low", transmission: "छालाको प्रत्यक्ष सम्पर्क वा ओसिलो तौलियाहरू साटासाट गर्दा", symptoms: "चिलाउने, गोलो र अलि उठेको रातो डाबर वा दाद आउनु, औंलाहरूका बीचको छाला उप्किनु", keywords: "itchy skin, circular red rash, ringworm, peeling skin between toes, fungal infection" },
+                                { 
+                                    name: "Chronic Obstructive Pulmonary Disease (COPD)", 
+                                    severity: "High", 
+                                    transmission: "भित्री कोठाको दाउरा/बायोमास चुल्होको धुवाँ, अत्यधिक वायु प्रदुषण, र धुम्रपान", 
+                                    symptoms: "क्रोनिक (दीर्घकालीन) र बढ्दै जाने खोकी, कडा सास फेर्न गाह्रो हुनु (विशेष गरी हिँडडुल गर्दा), छाती घ्यारघ्यार हुनु, छाती कसिने र ठूलो मात्रामा खकार आउनु",
+                                    keywords: "chronic cough, progressive breathlessness, shortness of breath on exertion, wheezing, chest tightness, heavy sputum production, phlegm" 
+                                },
+                                { 
+                                    name: "Dengue (डेङ्गु)", 
+                                    severity: "High", 
+                                    transmission: "संक्रमित एडिस (Aedes) लामखुट्टेको टोकाइबाट", 
+                                    symptoms: "अचानक उच्च ज्वरो आउनु, आँखाको पछाडिको भाग तीव्र दुख्नु, जोर्नी र मांसपेशीहरू निकै दुख्नु (हड्डी भाँच्चिए जस्तो दुख्ने), र छालामा रातो डाबरहरू आउनु",
+                                    keywords: "sudden high fever, retro-orbital pain, severe bone joint pain, breakbone fever, muscle ache, red skin rash" 
+                                },
+                                { 
+                                    name: "Tuberculosis (TB - क्षयरोग)", 
+                                    severity: "High", 
+                                    transmission: "हावाको माध्यमबाट फैलिने ब्याक्टेरिया (खोक्दा वा हाछ्युँ गर्दा)", 
+                                    symptoms: "३ हप्ता वा सोभन्दा बढी समयसम्म लगातार खोकी लाग्नु, खोकीमा रगत देखिनु, बेलुकापख ज्वरो आउनु र राति पसिना आउनु, अप्रत्याशित रूपमा तौल घट्नु",
+                                    keywords: "cough more than 3 weeks, blood in sputum, hemoptysis, low grade evening fever, night sweats, unexplained weight loss" 
+                                },
+                                { 
+                                    name: "Malaria (औलो / मलेरिया)", 
+                                    severity: "High", 
+                                    transmission: "संक्रमित एनोफिलिज (Anopheles) लामखुट्टेको टोकाइबाट", 
+                                    symptoms: "काँपछ्रुट्ने चिसो र काम्च्युरोसहित चक्रिय रूप रूपमा उच्च ज्वरो आउनु, ज्वरो घट्दा अत्यधिक पसिना आउनु, र कडा शरीर दुख्नु",
+                                    keywords: "shivering chills, rigors, cyclic high fever, profuse sweating, severe body ache" 
+                                },
+                                { 
+                                    name: "Gastroenteritis / Diarrhea (झाडापखाला)", 
+                                    severity: "Medium", 
+                                    transmission: "दूषित पानी वा खानाको माध्यमबाट (विशेष गरी मनसुनको समयमा)", 
+                                    symptoms: "पटक-पटक पातलो दिसा हुनु, पेट निकै मरोड्नु र दुख्नु, बान्ता हुनु, र शरीरमा पानीको मात्रा तीव्र रूपमा कम हुनु (मुख सुक्नु, रिंगटा लाग्नु)",
+                                    keywords: "frequent loose watery stool, diarrhea, abdominal cramps, stomach cramps, vomiting, dehydration, dry mouth, dizziness" 
+                                },
+                                { 
+                                    name: "Diabetes Mellitus (Type 2 - मधुमेह)", 
+                                    severity: "Medium", 
+                                    transmission: "इन्सुलिन प्रतिरोधात्मक क्षमता र अस्वस्थ जीवनशैलीका कारण रगतमा ग्लुकोजको मात्रा बढ्नु", 
+                                    symptoms: "अत्यधिक तिर्खा लाग्नु, विशेष गरी राती पटक-पटक पिसाब लाग्नु, भोक बढ्नु, र काटेको वा लागेको चोट ढिलो निको हुनु",
+                                    keywords: "excessive thirst, polydipsia, frequent nighttime urination, polyuria, increased hunger, delayed wound healing, slow healing cuts" 
+                                },
+                                { 
+                                    name: "Jaundice / Hepatitis A & E (जन्डिस / कलेजोको सुजन)", 
+                                    severity: "Medium", 
+                                    transmission: "दूषित पानी वा खानाको प्रयोग (fecal-oral मार्ग) मार्फत कलेजोमा भाइरस संक्रमण", 
+                                    symptoms: "आँखा र छाला पहेंलो हुनु, गाढा बियर जस्तो रंगको पिसाब आउनु, भोक कत्ति पनि नलाग्नु, वाकवाकी लाग्नु, र पेटको माथिल्लो भाग दुख्नु",
+                                    keywords: "yellow eyes, yellow skin, dark tea colored urine, loss of appetite, nausea, upper abdominal pain, liver inflammation" 
+                                },
+                                { 
+                                    name: "Kidney Stones (मिर्गौलाको पत्थरी)", 
+                                    severity: "Medium", 
+                                    transmission: "मिर्गौला भित्र खनिज र नुनका कणहरू जम्मा भई कडा गेडागुडी बन्नु", 
+                                    symptoms: "कम्मरको तल्लो भाग वा कोखामा असह्य तीखो पीडा हुनु जुन तल्लो पेटतिर सर्छ, पिसाब फेर्दा दुख्नु, र गुलाबी वा धमिलो पिसाब आउनु",
+                                    keywords: "severe flank pain, sharp lower back pain, radiating groin pain, painful urination, dysuria, pink cloudy urine, hematuria" 
+                                },
+                                { 
+                                    name: "Urinary Tract Infection (UTI - पिसाब थैलीको संक्रमण)", 
+                                    severity: "Medium", 
+                                    transmission: "पिसाब नलीमा ब्याक्टेरियाको संक्रमण हुनु (महिलाहरूमा बढी देखिने)", 
+                                    symptoms: "पिसाब फेर्दा कडा जलन वा पोलेको महसुस हुनु, पटक-पटक र छिटो-छिटो थोरै पिसाब आउनु, र तल्लो पेटमा दबाब वा पीडा हुनु",
+                                    keywords: "burning micturition, painful urination, urinary urgency, frequent small urination, pelvic pain, lower abdominal pressure" 
+                                },
+                                { 
+                                    name: "Major Depressive Disorder (Depression - डिप्रेसन)", 
+                                    severity: "Medium", 
+                                    transmission: "लामो समयसम्म रहने मुड विकार (मानसिक स्वास्थ्य अवस्था)", 
+                                    symptoms: "लगातार उदास महसुस हुनु, पहिले रमाइलो लाग्ने कुराहरूमा रुचि घट्नु, हरसमय थकान लाग्नु, निद्रामा गडबडी हुनु, र समाज वा साथीभाइबाट टाढिनु",
+                                    keywords: "persistent sadness, depressed mood, anhedonia, loss of interest, chronic fatigue, low energy, insomnia, sleep disturbance, social withdrawal" 
+                                },
+                                { 
+                                    name: "Hypothyroidism (थाइराइड हर्मोनको कमी)", 
+                                    severity: "Medium", 
+                                    transmission: "थाइराइड ग्रन्थिले शरीरलाई चाहिने आवश्यक थाइराइड हर्मोन उत्पादन गर्न नसक्नु", 
+                                    symptoms: "विना कारण तौल बढ्नु, अत्यधिक थकान र सुस्ती महसुस हुनु, पुरानो कब्जियत हुनु, छाला सुक्खा हुनु, र चिसो बढी लाग्नु",
+                                    keywords: "unexplained weight gain, extreme fatigue, lethargy, chronic constipation, dry skin, cold intolerance" 
+                                },
+                                { 
+                                    name: "Polycystic Ovary Syndrome (PCOS)", 
+                                    severity: "Medium", 
+                                    transmission: "प्रजनन उमेरका महिलाहरूमा हुने हर्मोनको असन्तुलन र मेटाबोलिक परिवर्तन", 
+                                    symptoms: "महिनावारी अनियमित हुनु वा रोकिनु, अनुहार वा शरीरमा अत्यधिक रौं पलाउनु, तीव्र रूपमा तौल बढ्नु, र कडा खालको डन्डीफोर (cystic acne) आउनु",
+                                    keywords: "irregular periods, missed menstruation, facial hair growth, hirsutism, rapid weight gain, severe cystic acne" 
+                                },
+                                { 
+                                    name: "Anemia (रक्तअल्पता / रगतको कमी)", 
+                                    severity: "Medium", 
+                                    transmission: "मुख्यतया फलाम (Iron) को कमीले गर्दा रगतमा स्वस्थ रातो रक्तकोष वा हेमोग्लोबिन घट्नु", 
+                                    symptoms: "लगातार ऊर्जाको कमी र शारीरिक कमजोरी महसुस हुनु, छाला फुस्रो वा पहेंलो देखिनु, हातखुट्टा चिसो हुनु, रिंगटा लाग्नु, र सास फेर्न गाह्रो हुनु",
+                                    keywords: "chronic fatigue, physical weakness, pale skin, cold hands feet, dizziness, lightheadedness, shortness of breath, iron deficiency" 
+                                },
+                                { 
+                                    name: "Allergic Asthma (एलर्जीक दम)", 
+                                    severity: "Low", 
+                                    transmission: "धुलो, चिसो र प्रदुषण जस्ता वातावरणीय कारकहरूले श्वासप्रश्वासको नली सुन्निनु", 
+                                    symptoms: "सास फेर्न गाह्रो हुनु, सास बाहिर फाल्दा सुनिने खालको घ्यारघ्यार हुनु, छाती कसिने र चिसो वा धुलोले सुक्खा खोकी चल्नु",
+                                    keywords: "difficulty breathing, expiratory wheezing, chest tightness, dry cough triggered by dust cold dust allergy" 
+                                },
+                                { 
+                                    name: "Sinusitis (पिनास)", 
+                                    severity: "Low", 
+                                    transmission: "एलर्जी वा चिसो लाग्दा नाकको भित्री खाली भाग (cavities) सुन्निनु वा संक्रमण हुनु", 
+                                    symptoms: "निधार र आँखा वरपर अनुहारमा भारीपन वा टन्किएको जस्तो पीडा हुनु, बाक्लो सिंगान आउने र नाक बन्द हुनु, सुँघ्ने क्षमता अस्थायी रूपमा घट्नु",
+                                    keywords: "facial pressure, forehead headache, facial pain, thick nasal discharge, nasal congestion, blocked nose, loss of smell" 
+                                },
+                                { 
+                                    name: "Gout / High Uric Acid (युरिक एसिड / बाथ)", 
+                                    severity: "Low", 
+                                    transmission: "जोर्नीहरूमा युरिक एसिडको क्रिस्टल जम्मा हुनु (रक्सी, रातो मासु वा तामाको बढी सेवनले)", 
+                                    symptoms: "जोर्नीहरू अचानक निकै दुख्नु, रातो हुनु, तातो हुनु र कडा सुन्निनु (विशेष गरी खुट्टाको बुढी औंलाको फेदमा)",
+                                    keywords: "sudden acute joint pain, red hot swollen joint, big toe joint inflammation, uric acid flare up" 
+                                },
+                                { 
+                                    name: "Generalized Anxiety Disorder (GAD - एन्जाइटी)", 
+                                    severity: "Low", 
+                                    transmission: "दैनिक जीवनका साधारण कुराहरूमा पनि अत्यधिक, अनियन्त्रित र लगातार चिन्ता लाग्ने मानसिक अवस्था", 
+                                    symptoms: "हरसमय डर वा आत्तिएको महसुस हुनु, मुटुको धड्कन बढ्नु, हात काँप्नु, मांसपेशीहरू कसिनु, र छटपटी हुनु",
+                                    keywords: "constant worry, panic, racing heart, palpitations, hand tremors, muscle tension, restlessness, anxiety" 
+                                },
+                                { 
+                                    name: "Osteoarthritis (जोर्नी खिइने रोग)", 
+                                    severity: "Low", 
+                                    transmission: "बढ्दो उमेर वा बढी तौलका कारण जोर्नीहरूमा रहने सुरक्ष्यात्मक कुरकुरे हड्डी (cartilage) बिस्तारै खिइनु", 
+                                    symptoms: "हलचल गर्दा जोर्नी दुख्नु र कडा हुनु (विशेष गरी बसेर उठ्दा घुँडा दुख्नु), सुन्निनु, र जोर्नी चलाउँदा कटकट बजेको महसुस हुनु",
+                                    keywords: "joint pain on movement, joint stiffness, knee pain when standing up, swelling, joint crepitus, cracking sound" 
+                                },
+                                { 
+                                    name: "Eczema (Atopic Dermatitis - एकजिमा)", 
+                                    severity: "Low", 
+                                    transmission: "प्रतिरक्षा प्रणालीको संवेदनशीलता र छालाको एलर्जीका कारण हुने पुरानो समस्या", 
+                                    symptoms: "छाला निकै चिलाउनु, रातो वा खैरो रङको सुक्खा दागहरू देखिनु, र कन्याउँदा पानी वा तरल पदार्थ निस्कने साना फोकाहरू आउनु",
+                                    keywords: "intense itching, red dry skin patches, weeping blisters, fluid oozing skin, skin rash" 
+                                },
+                                { 
+                                    name: "Psoriasis (सोरायसिस / कत्ले दाद)", 
+                                    severity: "Low", 
+                                    transmission: "अटोइम्यून समस्या जसले छालाका कोषहरू तीव्र रूपमा बढाउँछ र छालाको सतह बाक्लो बनाउँछ", 
+                                    symptoms: "चाँदी जस्तो कत्लाले ढाकिएको छालाको बाक्लो र रातो दागहरू देखिनु, छाला अत्यधिक सुक्खा भई फुट्नु र रगत आउनु, चिलाउनु वा पोल्नु",
+                                    keywords: "silvery scales, thick red plaques, extremely dry cracked skin, bleeding skin patches, itching burning skin" 
+                                },
+                                { 
+                                    name: "Otitis Media (कानको मध्य भागको संक्रमण)", 
+                                    severity: "Low", 
+                                    transmission: "कानको जालीको पछाडिको भागमा हुने संक्रमण वा सुजन (साना बच्चाहरूमा बढी देखिने)", 
+                                    symptoms: "कान निकै दुख्नु, कानबाट गन्ध आउने तरल पदार्थ वा पीप बग्नु, अस्थायी रूपमा सुन्ने क्षमता कम हुनु, र बच्चाहरू धेरै रुनु वा चिडचिडा हुनु",
+                                    keywords: "severe earache, ear pain, foul smelling ear discharge, pus from ear, temporary hearing loss, crying irritable infant" 
+                                },
+                                { 
+                                    name: "Tonsillitis (टन्सिल सुनिनु)", 
+                                    severity: "Low", 
+                                    transmission: "घाँटीको पछाडि रहने टन्सिलमा भाइरस वा ब्याक्टेरियाको संक्रमण हुनु", 
+                                    symptoms: "घाँटी कडा दुख्नु, खानेकुरा वा थुक निल्न निकै गाह्रो हुनु, ज्वरो आउनु, बङ्गारा मुनिको ग्रन्थि सुन्निनु, र टन्सिलमा सेतो दाग देखिनु",
+                                    keywords: "severe sore throat, difficulty swallowing, odynophagia, fever, swollen jaw glands, tonsil white spots" 
+                                },
+                                { 
+                                    name: "Migraine (माइग्रेन / आधा टाउको दुख्ने)", 
+                                    severity: "Low", 
+                                    transmission: "माइग्रेन स्नायुसम्बन्धी समस्या आधा टाउको कडा असह्य पीडा उत्पन्न", 
+                                    symptoms: "टाउकोको एकतर्फ टन्केर कडा दुख्नु, वाकवाकी लाग्नु वा बान्ता हुनु, र चम्किलो उज्यालो, ठूलो आवाज वा कडा गन्धसँग अत्यधिक गाह्रो हुनु",
+                                    keywords: "one sided throbbing headache, unilateral head pain, nausea, vomiting, photophobia, phonophobia, light sound sensitivity" 
+                                },
+                                { 
+                                    name: "Varicose Veins (नशा फुल्ने समस्या)", 
+                                    severity: "Low", 
+                                    transmission: "खुट्टाका नसाका भल्भहरू कमजोर हुँदा रगत उल्टो बगेर नसाहरू घुम्चिनु र ठूलो हुनु", 
+                                    symptoms: "पिँडौलामा गाढा बैजनी वा निलो रङका घुम्रिएका नसाहरू स्पष्ट देखिनु, खुट्टा भारी भएको वा दुखेको महसुस हुनु, र बेलुकापख गोलीगाँठो वरपर सामान्य सुन्निनु",
+                                    keywords: "enlarged twisted veins, dark purple blue leg veins, heavy legs, aching calf, mild ankle swelling" 
+                                }
+                            ].map((disease, idx) => {
+                                // Combine Nepali descriptions and English keywords into a single search target
+                                const searchableIndex = `${disease.symptoms} ${disease.keywords || ''}`;
+                                
+                                return (
+                                    <div 
+                                        key={idx} 
+                                        className="disease-card-item animate-pop-up" 
+                                        style={{ animationDelay: `${0.05 * (idx + 1)}s` }}
+                                        data-name={disease.name}
+                                        data-symptoms={searchableIndex} 
+                                        onClick={(e) => {
+                                            e.currentTarget.classList.toggle('expanded');
+                                        }}
+                                    >
+                                        <div className="disease-card-header">
+                                            <span className="disease-name-text">{disease.name}</span>
+                                            <span className={`severity-badge ${disease.severity.toLowerCase()}`}>
+                                                {disease.severity}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="disease-card-details">
+                                            <hr className="details-divider" />
+                                            <p><strong>सर्ने माध्यम (Transmission):</strong> {disease.transmission}</p>
+                                            <p style={{ marginTop: '6px' }}><strong>मुख्य लक्षणहरू (Symptoms):</strong> {disease.symptoms}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+                )}
+
+
+
+                {ActiveTab === 'notify' && (
+                    <div className="screen-wrapper specialist">
                         <header className="floating-header">
                             <button className="back-btn" onClick={() => setActiveTab('home')} onTouchStart={() => setActiveTab('home')}>← Back</button>
-                            <div className="header-title">रोग र लक्षणहरू</div>
+                            <div className="header-title" style={{ color: "#0f6d5a" }}>सूचनाहरू (Notifications)</div>
                         </header>
 
-                        <div className="symptoms-container">
-                            {/* Search Box */}
-                            <div className="search-box-wrapper animate-pop-up delay-1">
-                                <input 
-                                    type="text" 
-                                    placeholder="रोग खोज्नुहोस् (Search disease...)" 
-                                    className="symptoms-search-input"
-                                    onChange={(e) => {
-                                        const term = e.target.value.toLowerCase();
-                                        // Filter Logic
-                                        const items = document.querySelectorAll('.disease-card-item');
-                                        items.forEach(item => {
-                                            const name = item.getAttribute('data-name').toLowerCase();
-                                            if (name.includes(term)) {
-                                                item.style.display = 'block';
-                                            } else {
-                                                item.style.display = 'none';
-                                            }
-                                        });
-                                    }}
-                                />
-                            </div>
-
-                            {/* Scrollable Disease List */}
-                            <div className="disease-scroll-list">
-                                {[
-                                    // High Severity Diseases
-                                    { name: "Rabies (रेबिज)", severity: "High", transmission: "जनावरको टोकाइबाट (कुकुर, बाँदर)", symptoms: "टोकेको ठाउँमा झनझनाहट हुनु, अत्यधिक उत्तेजना हुनु, पानीसँग डराउनु (हाइड्रोफोबिया), र्‍याल अत्यधिक आउनु" },
-                                    { name: "Cholera (हैजा)", severity: "High", transmission: "दूषित खाना वा पानी", symptoms: "प्रशस्त 'चौलानी जस्तो' दिसा हुनु, अत्यधिक बान्ता हुनु, शरीरमा पानीको मात्रा तीव्र रूपमा कम हुनु" },
-                                    { name: "Meningococcal Meningitis (मेनिन्जाइटिस)", severity: "High", transmission: "स्वासप्रश्वासका मसिना थोपाहरूबाट", symptoms: "अचानक उच्च ज्वरो आउनु, कडा टाउको दुख्नु, घाँटी कडा हुनु, अलमल्ल पर्नु" },
-                                    { name: "Neonatal Tetanus (धनुष्टंकार)", severity: "High", transmission: "नाभी काट्दा वा सम्हाल्दा फोहोर औजारको प्रयोग हुनु", symptoms: "बङ्गारा बाँधिनु (लकज), मांसपेशीहरू निकै दुख्नु र बाउँडिनु, शरीर धनुष जस्तै कडा हुनु" },
-                                    { name: "Japanese Encephalitis (मस्तिष्क ज्वरो)", severity: "High", transmission: "क्युलेक्स (Culex) लामखुट्टेको टोकाइबाट", symptoms: "उच्च ज्वरो आउनु, घाँटी कडा हुनु, कम्पन हुनु, छारे रोग जस्तो काँप्नु, बेहोस हुनु" },
-
-                                    // Medium Severity Diseases
-                                    { name: "Pneumonia / ARI (न्युमोनिया)", severity: "Medium", transmission: "हावामा फैलिने स्वासप्रश्वासका थोपाहरूबाट", symptoms: "छिटो-छिटो सास फेर्नु, कोखा हान्नु (छाती भित्र धसिनु), घ्यारघ्यारसहितको खोकी, ओठ निलो हुनु" },
-                                    { name: "Typhoid Fever (म्याद थपे ज्वरो)", severity: "Medium", transmission: "दूषित खाना/पानी वा दिसा-मुख मार्गबाट", symptoms: "दिनदिनै खुड्किलो जस्तै बढ्दै जाने ज्वरो, पेट निकै दुख्नु, सुक्खा खोकी, अत्यधिक थकान वा शिथिलता" },
-                                    { name: "Scrub Typhus (स्क्रब टाइफस)", severity: "Medium", transmission: "संक्रमित सानो किर्ना (chigger) को टोकाइबाट", symptoms: "उच्च ज्वरो आउनु, कडा टाउको दुख्नु, चुरोटले पोलेको जस्तो कालो पाप्रा (eschar) बस्नु" },
-                                    { name: "Leptospirosis (लेप्टोस्पाइरोसिस)", severity: "Medium", transmission: "बाढीको पानीमा मुसाको पिसाबसँग प्रत्यक्ष सम्पर्क हुनु", symptoms: "अचानक ज्वरो आउनु, आँखा बिना पीप रातो हुनु, पिँडौलाको मांसपेशी निकै दुख्नु, जन्डिस हुनु" },
-                                    { name: "Chronic Kidney Disease (मिर्गौला रोग)", severity: "Medium", transmission: "लामो समयसम्मको मधुमेह वा उच्च रक्तचाप", symptoms: "सुरुवाती चरणमा लक्षण नदेखिनु; पछि शरीर सुन्निनु, थकान लाग्नु, मिर्गौलाको कार्यक्षमता घट्दै जानु" },
-
-                                    // Low Severity Diseases
-                                    { name: "The Common Cold (रुघाखोकी)", severity: "Low", transmission: "स्वासप्रश्वासका भाइरसका कणहरू", symptoms: "नाक बन्द हुनु, सिंगान बग्नु, हाँछ्युँ आउनु, घाँटी सामान्य दुख्नु" },
-                                    { name: "Gastritis (ग्यास्ट्रिक / एसिडिटी)", severity: "Low", transmission: "एच. पाइलोरी (H. pylori) संक्रमण वा अस्वस्थ जीवनशैली", symptoms: "पेटको माथिल्लो भाग पोल्नु, पेट फुल्नु, तारन्तार वाकवाकी लाग्नु" },
-                                    { name: "Giardiasis (जीयार्डिया)", severity: "Low", transmission: "राम्रोसँग उपचार नगरिएको वा दूषित पानीको प्रयोग", symptoms: "गन्ध आउने चिल्लो दिसा हुनु, पेट फुल्नु, अमिलो डकार आउनु" },
-                                    { name: "Conjunctivitis (आँखा पाक्ने रोग)", severity: "Low", transmission: "आँखाबाट निस्कने तरल पदार्थको प्रत्यक्ष सम्पर्कबाट", symptoms: "आँखाको सेतो भाग गाढा गुलाबी वा रातो हुनु, आँखा बिझाउनु, बाक्लो पहेंलो कचेरा लाग्नु" },
-                                    { name: "Ringworm / Athlete's Foot", severity: "Low", transmission: "छालाको प्रत्यक्ष सम्पर्क वा ओसिलो तौलियाहरू साटासाट गर्दा", symptoms: "चिलाउने, गोलो र अलि उठेको रातो डाबर वा दाद आउनु, औंलाहरूका बीचको छाला उप्किनु" },
-                                    { 
-                                        name: "Chronic Obstructive Pulmonary Disease (COPD)", 
-                                        severity: "High", 
-                                        transmission: "भित्री कोठाको दाउरा/बायोमास चुल्होको धुवाँ, अत्यधिक वायु प्रदुषण, र धुम्रपान", 
-                                        symptoms: "क्रोनिक (दीर्घकालीन) र बढ्दै जाने खोकी, कडा सास फेर्न गाह्रो हुनु (विशेष गरी हिँडडुल गर्दा), छाती घ्यारघ्यार हुनु, छाती कसिने र ठूलो मात्रामा खकार आउनु" 
-                                    },
-                                    { 
-                                        name: "Dengue (डेङ्गु)", 
-                                        severity: "High", 
-                                        transmission: "संक्रमित एडिस (Aedes) लामखुट्टेको टोकाइबाट", 
-                                        symptoms: "अचानक उच्च ज्वरो आउनु, आँखाको पछाडिको भाग तीव्र दुख्नु, जोर्नी र मांसपेशीहरू निकै दुख्नु (हड्डी भाँच्चिए जस्तो दुख्ने), र छालामा रातो डाबरहरू आउनु" 
-                                    },
-                                    { 
-                                        name: "Tuberculosis (TB - क्षयरोग)", 
-                                        severity: "High", 
-                                        transmission: "हावाको माध्यमबाट फैलिने ब्याक्टेरिया (खोक्दा वा हाछ्युँ गर्दा)", 
-                                        symptoms: "३ हप्ता वा सोभन्दा बढी समयसम्म लगातार खोकी लाग्नु, खोकीमा रगत देखिनु, बेलुकापख ज्वरो आउनु र राति पसिना आउनु, अप्रत्याशित रूपमा तौल घट्नु" 
-                                    },
-                                    { 
-                                        name: "Typhoid Fever (म्याद थपे ज्वरो)", 
-                                        severity: "High", 
-                                        transmission: "दूषित खाना वा पानीको माध्यमबाट आन्द्रा र रगतमा ब्याक्टेरिया फैलिँदा", 
-                                        symptoms: "दिनदिनै खुड्किलो जस्तै बढ्दै जाने लगातारको उच्च ज्वरो, पेट निकै दुख्नु, टाउको दुख्नु, र कब्जियत वा पखाला हुनु" 
-                                    },
-                                    { 
-                                        name: "Malaria (औलो / मलेरिया)", 
-                                        severity: "High", 
-                                        transmission: "संक्रमित एनोफिलिज (Anopheles) लामखुट्टेको टोकाइबाट", 
-                                        symptoms: "काँपछ्रुट्ने चिसो र काम्च्युरोसहित चक्रिय रूपमा उच्च ज्वरो आउनु, ज्वरो घट्दा अत्यधिक पसिना आउनु, र कडा शरीर दुख्नु" 
-                                    },
-                                    { 
-                                        name: "Pneumonia (न्युमोनिया)", 
-                                        severity: "High", 
-                                        transmission: "फोक्सोमा हुने तीव्र श्वासप्रश्वासको संक्रमण (ब्याक्टेरिया, भाइरस वा फङ्गस)", 
-                                        symptoms: "सास फेर्दा वा खोक्दा छाती तीखो गरी दुख्नु, काम्च्युरोसहित उच्च ज्वरो आउनु, बाक्लो खकार आउने खोकी, र छिटो-छिटो सास फेर्नु" 
-                                    },
-
-                                    // --- MEDIUM SEVERITY DISEASES ---
-                                    { 
-                                        name: "Gastroenteritis / Diarrhea (झाडापखाला)", 
-                                        severity: "Medium", 
-                                        transmission: "दूषित पानी वा खानाको माध्यमबाट (विशेष गरी मनसुनको समयमा)", 
-                                        symptoms: "पटक-पटक पातलो दिसा हुनु, पेट निकै मरोड्नु र दुख्नु, बान्ता हुनु, र शरीरमा पानीको मात्रा तीव्र रूपमा कम हुनु (मुख सुक्नु, रिंगटा लाग्नु)" 
-                                    },
-                                    { 
-                                        name: "Scrub Typhus (स्क्रब टाइफस)", 
-                                        severity: "Medium", 
-                                        transmission: "संक्रमित सानो किर्नाको लार्भा (chigger) को टोकाइबाट", 
-                                        symptoms: "उच्च ज्वरो आउनु, कडा टाउको दुख्नु, मांसपेशी दुख्नु, र टोकेको ठाउँमा चुरोटले पोलेको जस्तो कालो पाप्रा (Eschar) बस्नु" 
-                                    },
-                                    { 
-                                        name: "Diabetes Mellitus (Type 2 - मधुमेह)", 
-                                        severity: "Medium", 
-                                        transmission: "इन्सुलिन प्रतिरोधात्मक क्षमता र अस्वस्थ जीवनशैलीका कारण रगतमा ग्लुकोजको मात्रा बढ्नु", 
-                                        symptoms: "अत्यधिक तिर्खा लाग्नु, विशेष गरी राती पटक-पटक पिसाब लाग्नु, भोक बढ्नु, र काटेको वा लागेको चोट ढिलो निको हुनु" 
-                                    },
-                                    { 
-                                        name: "Jaundice / Hepatitis A & E (जन्डिस / कलेजोको सुजन)", 
-                                        severity: "Medium", 
-                                        transmission: "दूषित पानी वा खानाको प्रयोग (fecal-oral मार्ग) मार्फत कलेजोमा भाइरस संक्रमण", 
-                                        symptoms: "आँखा र छाला पहेंलो हुनु, गाढा बियर जस्तो रंगको पिसाब आउनु, भोक कत्ति पनि नलाग्नु, वाकवाकी लाग्नु, र पेटको माथिल्लो दाहिने भाग दुख्नु" 
-                                    },
-                                    { 
-                                        name: "Kidney Stones (मिर्गौलाको पत्थरी)", 
-                                        severity: "Medium", 
-                                        transmission: "मिर्गौला भित्र खनिज र नुनका कणहरू जम्मा भई कडा गेडागुडी बन्नु", 
-                                        symptoms: "कम्मरको तल्लो भाग वा कोखामा असह्य तीखो पीडा हुनु जुन तल्लो पेटतिर सर्छ, पिसाब फेर्दा दुख्नु, र गुलाबी वा धमिलो पिसाब आउनु" 
-                                    },
-                                    { 
-                                        name: "Urinary Tract Infection (UTI - पिसाब थैलीको संक्रमण)", 
-                                        severity: "Medium", 
-                                        transmission: "पिसाब नलीमा ब्याक्टेरियाको संक्रमण हुनु (महिलाहरूमा बढी देखिने)", 
-                                        symptoms: "पिसाब फेर्दा कडा जलन वा पोलेको महसुस हुनु, पटक-पटक र छिटो-छिटो थोरै पिसाब आउनु, र तल्लो पेटमा दबाब वा पीडा हुनु" 
-                                    },
-                                    { 
-                                        name: "Major Depressive Disorder (Depression - डिप्रेसन)", 
-                                        severity: "Medium", 
-                                        transmission: "लामो समयसम्म रहने मुड विकार (मानसिक स्वास्थ्य अवस्था)", 
-                                        symptoms: "लगातार उदास महसुस हुनु, पहिले रमाइलो लाग्ने कुराहरूमा रुचि घट्नु, हरसमय थकान लाग्नु, निद्रामा गडबडी हुनु, र समाज वा साथीभाइबाट टाढिनु" 
-                                    },
-                                    { 
-                                        name: "Hypothyroidism (थाइराइड हर्मोनको कमी)", 
-                                        severity: "Medium", 
-                                        transmission: "थाइराइड ग्रन्थिले शरीरलाई चाहिने आवश्यक थाइराइड हर्मोन उत्पादन गर्न नसक्नु", 
-                                        symptoms: "विना कारण तौल बढ्नु, अत्यधिक थकान र सुस्ती महसुस हुनु, पुरानो कब्जियत हुनु, छाला सुक्खा हुनु, र चिसो बढी लाग्नु" 
-                                    },
-                                    { 
-                                        name: "Polycystic Ovary Syndrome (PCOS)", 
-                                        severity: "Medium", 
-                                        transmission: "प्रजनन उमेरका महिलाहरूमा हुने हर्मोनको असन्तुलन र मेटाबोलिक परिवर्तन", 
-                                        symptoms: "महिनावारी अनियमित हुनु वा रोकिनु, अनुहार वा शरीरमा अत्यधिक रौं पलाउनु, तीव्र रूपमा तौल बढ्नु, र कडा खालको डन्डीफोर (cystic acne) आउनु" 
-                                    },
-                                    { 
-                                        name: "Anemia (रक्तअल्पता / रगतको कमी)", 
-                                        severity: "Medium", 
-                                        transmission: "मुख्यतया फलाम (Iron) को कमीले गर्दा रगतमा स्वस्थ रातो रक्तकोष वा हेमोग्लोबिन घट्नु", 
-                                        symptoms: "लगातार ऊर्जाको कमी र शारीरिक कमजोरी महसुस हुनु, छाला फुस्रो वा पहेंलो देखिनु, हातखुट्टा चिसो हुनु, रिंगटा लाग्नु, र सास फेर्न गाह्रो हुनु" 
-                                    },
-
-                                    // --- LOW SEVERITY DISEASES ---
-                                    { 
-                                        name: "Hypertension (High Blood Pressure - उच्च रक्तचाप)", 
-                                        severity: "Low", 
-                                        transmission: "नुनको अत्यधिक सेवन, शारीरिक व्यायामको कमी, र तनाव (सुरुवाती चरणमा प्रायः लक्षण विहीन रहने)", 
-                                        symptoms: "कडा अवस्थामा बिहानपख टाउको दुख्नु, रिंगटा लाग्नु, धमिलो देखिनु, र छाती ढुकढुक हुनु" 
-                                    },
-                                    { 
-                                        name: "Gastritis / Peptic Ulcers (ग्यास्ट्रिक / अल्सर)", 
-                                        severity: "Low", 
-                                        transmission: "अनियमित खानपान, बढी पिरो/चिल्लो खानेकुरा र लामो समय पेट खाली राख्दा", 
-                                        symptoms: "पेटको माथिल्लो भाग पोल्नु (प्रायः खाली पेटमा बढी हुने), अमिलो पानी आउनु (छाती पोल्नु), पेट फुल्नु, र धेरै डकार आउनु" 
-                                    },
-                                    { 
-                                        name: "Allergic Asthma (एलर्जीक दम)", 
-                                        severity: "Low", 
-                                        transmission: "धुलो, चिसो र प्रदुषण जस्ता वातावरणीय कारकहरूले श्वासप्रश्वासको नली सुन्निनु", 
-                                        symptoms: "सास फेर्न गाह्रो हुनु, सास बाहिर फाल्दा सुनिने खालको घ्यारघ्यार हुनु, छाती कसिने र चिसो वा धुलोले सुक्खा खोकी चल्नु" 
-                                    },
-                                    { 
-                                        name: "Sinusitis (पिनास)", 
-                                        severity: "Low", 
-                                        transmission: "एलर्जी वा चिसो लाग्दा नाकको भित्री खाली भाग (cavities) सुन्निनु वा संक्रमण हुनु", 
-                                        symptoms: "निधार र आँखा वरपर अनुहारमा भारीपन वा टन्किएको जस्तो पीडा हुनु, बाक्लो सिंगान आउने र नाक बन्द हुनु, सुँघ्ने क्षमता अस्थायी रूपमा घट्नु" 
-                                    },
-                                    { 
-                                        name: "Gout / High Uric Acid (युरिक एसिड / बाथ)", 
-                                        severity: "Low", 
-                                        transmission: "जोर्नीहरूमा युरिक एसिडको क्रिस्टल जम्मा हुनु (रक्सी, रातो मासु वा तामाको बढी सेवनले)", 
-                                        symptoms: "जोर्नीहरू अचानक निकै दुख्नु, रातो हुनु, तातो हुनु र कडा सुन्निनु (विशेष गरी खुट्टाको बुढी औंलाको फेदमा)" 
-                                    },
-                                    { 
-                                        name: "Generalized Anxiety Disorder (GAD - एन्जाइटी)", 
-                                        severity: "Low", 
-                                        transmission: "दैनिक जीवनका साधारण कुराहरूमा पनि अत्यधिक, अनियन्त्रित र लगातार चिन्ता लाग्ने मानसिक अवस्था", 
-                                        symptoms: "हरसमय डर वा आत्तिएको महसुस हुनु, मुटुको धड्कन बढ्नु, हात काँप्नु, मांसपेशीहरू कसिनु, र छटपटी हुनु" 
-                                    },
-                                    { 
-                                        name: "Osteoarthritis (जोर्नी खिइने रोग)", 
-                                        severity: "Low", 
-                                        transmission: "बढ्दो उमेर वा बढी तौलका कारण जोर्नीहरूमा रहने सुरक्ष्यात्मक कुरकुरे हड्डी (cartilage) बिस्तारै खिइनु", 
-                                        symptoms: "हलचल गर्दा जोर्नी दुख्नु र कडा हुनु (विशेष गरी बसेर उठ्दा घुँडा दुख्नु), सुन्निनु, र जोर्नी चलाउँदा कटकट बजेको महसुस हुनु" 
-                                    },
-                                    { 
-                                        name: "Eczema (Atopic Dermatitis - एकजिमा)", 
-                                        severity: "Low", 
-                                        transmission: "प्रतिरक्षा प्रणालीको संवेदनशीलता र छालाको एलर्जीका कारण हुने पुरानो समस्या", 
-                                        symptoms: "छाला निकै चिलाउनु, रातो वा खैरो रङको सुक्खा दागहरू देखिनु, र कन्याउँदा पानी वा तरल पदार्थ निस्कने साना फोकाहरू आउनु" 
-                                    },
-                                    { 
-                                        name: "Psoriasis (सोरायसिस / कत्ले दाद)", 
-                                        severity: "Low", 
-                                        transmission: "अटोइम्यून समस्या जसले छालाका कोषहरू तीव्र रूपमा बढाउँछ र छालाको सतह बाक्लो बनाउँछ", 
-                                        symptoms: "चाँदी जस्तो कत्लाले ढाकिएको छालाको बाक्लो र रातो दागहरू देखिनु, छाला अत्यधिक सुक्खा भई फुट्नु र रगत आउनु, चिलाउनु वा पोल्नु" 
-                                    },
-                                    { 
-                                        name: "Otitis Media (कानको मध्य भागको संक्रमण)", 
-                                        severity: "Low", 
-                                        transmission: "कानको जालीको पछाडिको भागमा हुने संक्रमण वा सुजन (साना बच्चाहरूमा बढी देखिने)", 
-                                        symptoms: "कान निकै दुख्नु, कानबाट गन्ध आउने तरल पदार्थ वा पीप बग्नु, अस्थायी रूपमा सुन्ने क्षमता कम हुनु, र बच्चाहरू धेरै रुनु वा चिडचिडा हुनु" 
-                                    },
-                                    { 
-                                        name: "Tonsillitis (टन्सिल सुनिनु)", 
-                                        severity: "Low", 
-                                        transmission: "घाँटीको पछाडि रहने टन्सिलमा भाइरस वा ब्याक्टेरियाको संक्रमण हुनु", 
-                                        symptoms: "घाँटी कडा दुख्नु, खानेकुरा वा थुक निल्न निकै गाह्रो हुनु, ज्वरो आउनु, बङ्गारा मुनिको ग्रन्थि सुन्निनु, र टन्सिलमा सेतो दाग देखिनु" 
-                                    },
-                                    { 
-                                        name: "Migraine (माइग्रेन / आधा टाउको दुख्ने)", 
-                                        severity: "Low", 
-                                        transmission: "स्नायुसम्बन्धी समस्या जसले टाउकोको एक भागमा कडा र असह्य पीडा उत्पन्न गराउँछ", 
-                                        symptoms: "टाउकोको एकतर्फ टन्केर कडा दुख्नु, वाकवाकी लाग्नु वा बान्ता हुनु, र चम्किलो उज्यालो, ठूलो आवाज वा कडा गन्धसँग अत्यधिक गाह्रो हुनु" 
-                                    },
-                                    { 
-                                        name: "Varicose Veins (नशा फुल्ने समस्या)", 
-                                        severity: "Low", 
-                                        transmission: "खुट्टाका नसाका भल्भहरू कमजोर हुँदा रगत उल्टो बगेर नसाहरू घुम्चिनु र ठूलो हुनु", 
-                                        symptoms: "पिँडौलामा गाढा बैजनी वा निलो रङका घुम्रिएका नसाहरू स्पष्ट देखिनु, खुट्टा भारी भएको वा दुखेको महसुस हुनु, र बेलुकापख गोलीगाँठो वरपर सामान्य सुन्निनु" 
-                                    }
-
-                                ].map((disease, idx) => {
-                                    
-                                    return (
+                        <div className="symptoms-container" style={{ marginTop: "85px" }}>
+                            <div className="disease-scroll-list" style={{ height: "calc(100vh - 170px)", overflowY: "auto" }}>
+                                {notifLoading ? (
+                                    <div style={{ textAlign: 'center', padding: '20px', color: '#7f8c8d' }}>सूचनाहरू लोड हुँदैछ...</div>
+                                ) : notifications.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '20px', color: '#7f8c8d' }}>कुनै नयाँ सूचना छैन।</div>
+                                ) : (
+                                    notifications.map((notif, idx) => (
                                         <div 
                                             key={idx} 
-                                            className="disease-card-item animate-pop-up" 
-                                            style={{ animationDelay: `${0.05 * (idx + 1)}s` }}
-                                            data-name={disease.name}
-                                            onClick={(e) => {
-                                                e.currentTarget.classList.toggle('expanded');
-                                            }}
+                                            className="disease-card-item animate-pop-up expanded" 
+                                            style={{ animationDelay: `${0.05 * (idx + 1)}s`, marginBottom: '12px' }}
                                         >
-                                            <div className="disease-card-header">
-                                                <span className="disease-name-text">{disease.name}</span>
-                                                <span className={`severity-badge ${disease.severity.toLowerCase()}`}>
-                                                    {disease.severity}
+                                            <div className="disease-card-header" style={{height: "auto",}}>
+                                                <span className="disease-name-text" style={{ fontWeight: '700', color: '#2c3e50' }}>
+                                                    🔔 {notif.title}
                                                 </span>
                                             </div>
                                             
-                                            <div className="disease-card-details">
-                                                <hr className="details-divider" />
-                                                <p><strong>सर्ने माध्यम (Transmission):</strong> {disease.transmission}</p>
-                                                <p style={{ marginTop: '6px' }}><strong>मुख्य लक्षणहरू (Symptoms):</strong> {disease.symptoms}</p>
+                                            <div className="disease-card-details" style={{ display: 'block', paddingTop: '8px' }}>
+                                                <p style={{ margin: 0, fontSize: '14px', color: '#4a5568', lineHeight: '1.5' }}>
+                                                    {notif.details}
+                                                </p>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div> 
                 )}
 
-            {['home', 'record', 'account','Specialist','Guide','Symptoms'].includes(ActiveTab) && (
+            {['home', 'record', 'account','Specialist','Guide','Symptoms', 'notify'].includes(ActiveTab) && (
             <div className="bot">
                 <nav className="navigation-bar-bot">
                     {/* The sliding bar is anchored here */}
